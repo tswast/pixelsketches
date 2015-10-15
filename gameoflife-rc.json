@@ -1,0 +1,37 @@
+{
+    "apiVersion": "v1",
+    "kind": "ReplicationController",
+    "metadata": {
+        "name": "gameoflife-v1"
+    },
+    "spec": {
+        "replicas": 1,
+        "selector": {
+            "name": "gameoflife",
+            "version": "1"
+        },
+        "template": {
+            "metadata": {
+                "labels": {
+                    "name": "gameoflife",
+                    "version": "1"
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "image": "gcr.io/golang-game-of-life/gameoflife:v1",
+                        "name": "gameoflife",
+                        "ports": [
+                            {
+                                "containerPort": 8080,
+                                "hostPort": 8080,
+                                "protocol": "TCP"
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}
