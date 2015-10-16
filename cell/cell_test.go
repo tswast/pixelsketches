@@ -57,7 +57,6 @@ func TestRandomFieldReturns24BitField(t *testing.T) {
 				i,
 				s,
 				twentyFourBits)
-
 		}
 	}
 }
