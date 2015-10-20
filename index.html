@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h1>Game of Life</h1>
+<img id="gol-image"
+    style="width:80%; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; image-rendering: pixelated"
+    src="field/{{.Curr}}.png">
+
+<script>
+  var wsUrl = 'ws://' + window.location.host + '/socket';
+  var exampleSocket = new WebSocket(wsUrl);
+  exampleSocket.onmessage = function (event) {
+    var d = JSON.parse(event.data)
+    document.getElementById('gol-image').src = 'field/' + d['SeqNum'] + '.png';
+  }
+</script>
+
