@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package cell;
+
+// FieldProto represents the entire state of a 2D cellular automaton.
+message FieldProto {
+  // State holds the state information. The state for the cell at (x, y)
+  // is stored at State[Width * y + x].
+  repeated uint32 state = 1;
+  // Width is one dimension of the 2D state. The state is of size Width
+  // times Height.
+  int32 width = 2;
+  // Height is one dimension of the 2D state. The state is of size Width
+  // times Height.
+  int32 height = 3;
+}

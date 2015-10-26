@@ -1,0 +1,15 @@
+FROM golang
+
+# Install build tools so we can set up C/C++ dependencies, such as ZeroMQ.
+# https://github.com/crosbymichael/build-essential-docker
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    make \
+    automake \
+    gcc \
+    build-essential \
+    g++ \
+    cpp \
+    libc6-dev \
+    man-db \
+    autoconf \
+    pkg-config

@@ -1,0 +1,18 @@
+FROM gcr.io/golang-game-of-life/goczmq
+
+# Copy the local package files to the container's workspace.
+ADD . /go/src/github.com/tswast/gameoflife
+
+# Install Go package dependencies.
+RUN go get github.com/bradfitz/iter
+RUN go get github.com/golang/protobuf/proto
+RUN go get github.com/gorilla/websocket
+
+# Build the gameoflife command.
+RUN go install github.com/tswast/gameoflife
+
+# Run the gameoflife command by default when the container starts.
+WORKDIR /go/src/github.com/tswast/gameoflife
+ENTRYPOINT /go/bin/gameoflife
+
+EXPOSE 8080

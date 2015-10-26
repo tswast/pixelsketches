@@ -2,26 +2,26 @@
     "apiVersion": "v1",
     "kind": "ReplicationController",
     "metadata": {
-        "name": "gameoflife-v3"
+        "name": "web-v1-4"
     },
     "spec": {
-        "replicas": 1,
+        "replicas": 3,
         "selector": {
-            "name": "gameoflife",
-            "version": "3"
+            "name": "web",
+            "version": "1-4"
         },
         "template": {
             "metadata": {
                 "labels": {
-                    "name": "gameoflife",
-                    "version": "3"
+                    "name": "web",
+                    "version": "1-4"
                 }
             },
             "spec": {
                 "containers": [
                     {
-                        "image": "gcr.io/golang-game-of-life/gameoflife:v3",
-                        "name": "gameoflife",
+                        "image": "gcr.io/golang-game-of-life/web:v1-4",
+                        "name": "web",
                         "ports": [
                             {
                                 "containerPort": 8080,

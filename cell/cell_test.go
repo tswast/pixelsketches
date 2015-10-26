@@ -8,6 +8,83 @@ import (
 
 const twentyFourBits = 0xffffff
 
+var toProtoTests = []struct {
+	in   Field
+	want FieldProto
+}{
+	{
+		Field{},
+		FieldProto{},
+	},
+	{
+		Field{Width: 1, Height: 1, State: []uint32{1}},
+		FieldProto{Width: 1, Height: 1, State: []uint32{1}},
+	},
+	{
+		Field{Width: 2, Height: 2, State: []uint32{1, 2, 3, 4}},
+		FieldProto{Width: 2, Height: 2, State: []uint32{1, 2, 3, 4}},
+	},
+}
+
+func TestToProtoReturnsField(t *testing.T) {
+	for _, td := range toProtoTests {
+		got := ToProto(&td.in)
+		if !reflect.DeepEqual(*got, td.want) {
+			t.Errorf("ToProto(&%#v) =>\n\t&%#v,\n\twant &%#v", td.in, *got, td.want)
+			continue
+		}
+	}
+}
+
+var fromProtoTests = []struct {
+	in   *FieldProto
+	want *Field
+}{
+	{&FieldProto{Width: -1}, nil},
+	{&FieldProto{Height: -1}, nil},
+	{&FieldProto{Width: 1, Height: 1}, nil},
+	{&FieldProto{Width: 1, Height: 1, State: []uint32{1, 2}}, nil},
+	{&FieldProto{Width: 2, Height: 2, State: []uint32{1}}, nil},
+	{
+		&FieldProto{},
+		&Field{},
+	},
+	{
+		&FieldProto{Width: 1, Height: 1, State: []uint32{1}},
+		&Field{Width: 1, Height: 1, State: []uint32{1}},
+	},
+	{
+		&FieldProto{Width: 2, Height: 2, State: []uint32{1, 2, 3, 4}},
+		&Field{Width: 2, Height: 2, State: []uint32{1, 2, 3, 4}},
+	},
+}
+
+func TestFromProtoReturnsField(t *testing.T) {
+	for _, td := range fromProtoTests {
+		got, err := FromProto(td.in)
+		if td.want == nil {
+			if err == nil {
+				t.Errorf(
+					"FromProto(&%#v) =>\n\t&%#v, err: nil,\n\tbut want error",
+					*td.in,
+					*got)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf(
+				"FromProto(&%#v) =>\n\t&%#v, err: %q,\n\tbut do not want error",
+				*td.in,
+				*got,
+				err.Error())
+		}
+		if !reflect.DeepEqual(got, td.want) {
+			t.Errorf("FromProto(&%#v) =>\n\t&%#v,\n\twant &%#v", td.in, *got, *td.want)
+			continue
+		}
+	}
+}
+
 var cellTests = []struct {
 	in        Field
 	expectErr bool

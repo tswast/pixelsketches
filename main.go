@@ -7,16 +7,18 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/tswast/gameoflife/cell"
+	"github.com/zeromq/goczmq"
 	"html/template"
 	"image/png"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"sync"
-	"time"
 )
 
 var upgrader = websocket.Upgrader{
@@ -40,16 +42,38 @@ var templates = template.Must(template.ParseFiles("index.html"))
 var fieldPath = regexp.MustCompile("^/field/([0-9]+).png$")
 
 func main() {
-	cond.L.Lock()
-	fields[0] = cell.RandomField(128, 128)
-	start := &*fields[0]
-	cond.L.Unlock()
+	pub := os.Getenv("PUB_PORT")
+	if pub == "" {
+		log.Fatal("Missing PUB_PORT environment variable")
+	}
 
-	tick := time.Tick(time.Second)
-	r := cell.Run(start, tick)
+	fields[0] = cell.RandomField(128, 128)
 	go func() {
-		for {
-			f := <-r
+		sub := goczmq.NewSubChanneler(pub, "" /* all messages, no topic filtering */)
+		defer sub.Destroy()
+
+		for msg := range sub.RecvChan {
+			if len(msg) != 1 {
+				log.Printf(
+					"Message had unexpected number of frames: %d, want 1.\n",
+					len(msg))
+				continue
+			}
+			data := msg[0]
+
+			pf := &cell.FieldProto{}
+			if err := proto.Unmarshal(data, pf); err != nil {
+				log.Printf(
+					"Error unmarshalling message:\n\t%q,\n\t%#v\n",
+					err.Error(),
+					msg)
+				continue
+			}
+			f, err := cell.FromProto(pf)
+			if err != nil {
+				log.Printf("Got invalid Field:\n\t%q,\n\t%#v\n", err.Error(), f)
+				continue
+			}
 			cond.L.Lock()
 			curr = (curr + 1) % cacheSize
 			fields[curr] = f

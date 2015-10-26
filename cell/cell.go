@@ -38,7 +38,9 @@ type Field struct {
 // NewField creates an empty 2D cellular automaton state with the given (w, h)
 // dimensions.
 func NewField(w, h int) *Field {
-	validateDimensions(w, h)
+	if err := validateDimensions(w, h); err != nil {
+		panic(fmt.Sprintf("Unexpected error creating Field: %s", err.Error()))
+	}
 	return &Field{State: make([]uint32, w*h), Width: w, Height: h}
 }
 
@@ -55,30 +57,58 @@ func RandomField(w, h int) *Field {
 	return f
 }
 
-func validateDimensions(w, h int) {
+func validateDimensions(w, h int) error {
 	if w < 0 {
-		panic(fmt.Sprintf("Expected non-negative width, got %d", w))
+		return fmt.Errorf("expected non-negative width, got %d", w)
 	}
 	if h < 0 {
-		panic(fmt.Sprintf("Expected non-negative height, got %d", h))
+		return fmt.Errorf("expected non-negative height, got %d", h)
 	}
+	return nil
 }
 
-func validateField(f *Field) {
-	validateDimensions(f.Width, f.Height)
+func validateField(f *Field) error {
+	if err := validateDimensions(f.Width, f.Height); err != nil {
+		return err
+	}
 	if len(f.State) != f.Width*f.Height {
-		panic(fmt.Sprintf(
-			"Expected field with State = %d = %d * %d, got %d",
+		return fmt.Errorf(
+			"expected Field with State = %d = %d * %d, got %d",
 			f.Width*f.Height,
 			f.Width,
 			f.Height,
-			len(f.State)))
+			len(f.State))
 	}
+	return nil
+}
+
+// ToProto converts a Field into the FieldProto.
+func ToProto(f *Field) *FieldProto {
+	return &FieldProto{
+		State:  f.State,
+		Width:  int32(f.Width),
+		Height: int32(f.Height),
+	}
+}
+
+// FromProto converts a FieldProto into the Field struct.
+//
+// Since FieldProtos can come from untrusted sources this method returns an
+// error instead of panicing when encountering invalid Field data.
+func FromProto(f *FieldProto) (*Field, error) {
+	out := &Field{
+		State:  f.State,
+		Width:  int(f.Width),
+		Height: int(f.Height),
+	}
+	return out, validateField(out)
 }
 
 // ToImage converts the lower 24 bits of a Field's state into an image.
 func ToImage(f *Field) *image.NRGBA {
-	validateField(f)
+	if err := validateField(f); err != nil {
+		panic(fmt.Sprintf("Unexpected error creating image: %s", err.Error()))
+	}
 	img := image.NewNRGBA(image.Rect(0, 0, f.Width, f.Height))
 	for i, s := range f.State {
 		// Pull out the RGB values. I ignore the top alpha bit to make
