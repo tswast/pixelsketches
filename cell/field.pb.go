@@ -33,6 +33,8 @@ type FieldProto struct {
 	// Height is one dimension of the 2D state. The state is of size Width
 	// times Height.
 	Height int32 `protobuf:"varint,3,opt,name=height" json:"height,omitempty"`
+	// Seq is the sequence number indicating the current iteration number.
+	Seq int32 `protobuf:"varint,4,opt,name=seq" json:"seq,omitempty"`
 }
 
 func (m *FieldProto) Reset()         { *m = FieldProto{} }

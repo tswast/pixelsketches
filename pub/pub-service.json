@@ -10,9 +10,16 @@
     "spec": {
         "ports": [
             {
+		    "name": "zmq-pub",
                 "port": 5000,
                 "protocol": "TCP",
                 "targetPort": 5000
+            },
+            {
+		    "name": "zmq-rep",
+                "port": 5001,
+                "protocol": "TCP",
+                "targetPort": 5001
             }
         ],
         "selector": {

@@ -7,6 +7,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 	"github.com/tswast/gameoflife/cell"
@@ -41,10 +42,26 @@ var (
 var templates = template.Must(template.ParseFiles("index.html"))
 var fieldPath = regexp.MustCompile("^/field/([0-9]+).png$")
 
+var (
+	req  *goczmq.Sock
+	reqL = &sync.Mutex{}
+)
+
 func main() {
-	pub := os.Getenv("PUB_PORT")
+	pub := os.Getenv("PUB_PORT_5000_TCP")
 	if pub == "" {
-		log.Fatal("Missing PUB_PORT environment variable")
+		log.Fatal("Missing PUB_PORT_5000_TCP environment variable")
+	}
+	rep := os.Getenv("PUB_PORT_5001_TCP")
+	if rep == "" {
+		log.Fatal("Missing PUB_PORT_5001_TCP environment variable")
+	}
+	reqL.Lock()
+	var err error
+	req, err = goczmq.NewReq(rep)
+	reqL.Unlock()
+	if err != nil {
+		log.Fatal("Error connecting to REP %q: %q\n", rep, err.Error())
 	}
 
 	fields[0] = cell.RandomField(128, 128)
@@ -69,13 +86,19 @@ func main() {
 					msg)
 				continue
 			}
+			seq := int(pf.Seq) % cacheSize
+			if seq < 0 {
+				seq = seq + cacheSize
+			}
+
 			f, err := cell.FromProto(pf)
 			if err != nil {
 				log.Printf("Got invalid Field:\n\t%q,\n\t%#v\n", err.Error(), f)
 				continue
 			}
+
 			cond.L.Lock()
-			curr = (curr + 1) % cacheSize
+			curr = seq
 			fields[curr] = f
 			cond.Broadcast()
 			cond.L.Unlock()
@@ -95,14 +118,39 @@ func socketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// A read loop is required to handle ping keep-alive messages.
+	// Listen for update requests over the websocket.
 	go func(c *websocket.Conn) {
-		for {
-			if _, _, err := c.NextReader(); err != nil {
-				c.Close()
-				break
+		for _, r, err := c.NextReader(); err == nil; _, r, err = c.NextReader() {
+			reqL.Lock()
+			if req == nil {
+				log.Printf("Not connected to REQ/REP on pub\n")
+				continue
 			}
+			reqL.Unlock()
+
+			msg := &cell.UpdateRequest{}
+			if err := jsonpb.Unmarshal(r, msg); err != nil {
+				log.Printf("Error unmarshalling UpdateRequest: %q\n", err.Error())
+				continue
+			}
+
+			data, err := proto.Marshal(msg)
+			if err != nil {
+				log.Fatal("Marshaling error: %q\n\tfor %#v\n", err.Error(), *msg)
+			}
+
+			reqL.Lock()
+			if err = req.SendMessage([][]byte{data}); err != nil {
+				log.Printf("Error sending request: %q\n", err.Error())
+				continue
+			}
+			if _, err = req.RecvMessage(); err != nil {
+				log.Printf("Error receiving reply: %q\n", err.Error())
+				continue
+			}
+			reqL.Unlock()
 		}
+		c.Close()
 	}(conn)
 
 	cond.L.Lock()
@@ -144,6 +192,11 @@ func fieldHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cond.L.Lock()
+	if fields[i] == nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		cond.L.Unlock()
+		return
+	}
 	f := &*fields[i]
 	cond.L.Unlock()
 

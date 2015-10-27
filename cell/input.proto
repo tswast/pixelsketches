@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package cell;
+
+// UpdateRequest is used to to modify a running Game of Life simulation.
+message UpdateRequest {
+  oneof input {
+    UpdateMaskRequest update_mask = 1;
+    ResetFieldRequest reset_field = 2;
+  }
+}
+
+// UpdateResponse is the response to an UpdateRequest.
+//
+// It is blank for now, but exists in case we need to add response information
+// in the future.
+message UpdateResponse {
+}
+
+// UpdateMaskRequest modifies the mask used in the Game of Life calculation.
+//
+// The default mask is used to filter the calculations to use every three
+// bits for the game of life.
+message UpdateMaskRequest {
+  uint32 value = 1;
+}
+
+// ResetFieldRequest modifies the field to be a random state.
+message ResetFieldRequest {
+}

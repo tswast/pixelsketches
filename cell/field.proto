@@ -13,4 +13,6 @@ message FieldProto {
   // Height is one dimension of the 2D state. The state is of size Width
   // times Height.
   int32 height = 3;
+  // Seq is the sequence number indicating the current iteration number.
+  int32 seq = 4;
 }

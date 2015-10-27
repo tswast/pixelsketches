@@ -2,30 +2,35 @@
     "apiVersion": "v1",
     "kind": "ReplicationController",
     "metadata": {
-        "name": "pub-v1-3"
+        "name": "pub-v1-6"
     },
     "spec": {
         "replicas": 1,
         "selector": {
             "name": "pub",
-            "version": "1-3"
+            "version": "1-6"
         },
         "template": {
             "metadata": {
                 "labels": {
                     "name": "pub",
-                    "version": "1-3"
+                    "version": "1-6"
                 }
             },
             "spec": {
                 "containers": [
                     {
-                        "image": "gcr.io/golang-game-of-life/pub:v1-3",
+                        "image": "gcr.io/golang-game-of-life/pub:v1-6",
                         "name": "pub",
                         "ports": [
                             {
                                 "containerPort": 5000,
                                 "hostPort": 5000,
+                                "protocol": "TCP"
+                            },
+                            {
+                                "containerPort": 5001,
+                                "hostPort": 5001,
                                 "protocol": "TCP"
                             }
                         ]

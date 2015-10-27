@@ -5,7 +5,15 @@
 <h1>Game of Life</h1>
 <img id="gol-image"
     style="width:80%; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges; image-rendering: pixelated"
-    src="field/{{.Curr}}.png">
+    src="field/{{.Curr}}.png"><br>
+<button id="gol-reset">Reset</button>
+<button id="gol-mask-default">0x49249249</button>
+<button id="gol-mask-pretty">0x90909090</button>
+<button id="gol-mask-weird">0xAAAAAAAA</button>
+<button id="gol-mask-dense">0xFFFFFFFF</button>
+
+<input id="gol-mask-custom" type="text" value="0x49249249"></input>
+<button id="gol-mask-custom-go">Custom</button>
 
 <script>
   var wsUrl = 'ws://' + window.location.host + '/socket';
@@ -14,5 +22,25 @@
     var d = JSON.parse(event.data)
     document.getElementById('gol-image').src = 'field/' + d['SeqNum'] + '.png';
   }
+  document.getElementById('gol-reset').onclick = function(event) {
+    exampleSocket.send(JSON.stringify({'reset_field': {}}));
+  }
+  document.getElementById('gol-mask-default').onclick = function(event) {
+    exampleSocket.send(JSON.stringify({'update_mask': {'value': 0x49249249}}));
+  }
+  document.getElementById('gol-mask-pretty').onclick = function(event) {
+    exampleSocket.send(JSON.stringify({'update_mask': {'value': 0x90909090}}));
+  }
+  document.getElementById('gol-mask-weird').onclick = function(event) {
+    exampleSocket.send(JSON.stringify({'update_mask': {'value': 0xAAAAAAAA}}));
+  }
+  document.getElementById('gol-mask-dense').onclick = function(event) {
+    exampleSocket.send(JSON.stringify({'update_mask': {'value': 0xFFFFFFFF}}));
+  }
+  document.getElementById('gol-mask-custom-go').onclick = function(event) {
+    var mask = parseInt(document.getElementById('gol-mask-custom').value, 16);
+    exampleSocket.send(JSON.stringify({'update_mask': {'value': mask}}));
+  }
+
 </script>
 
