@@ -6,6 +6,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -25,10 +26,64 @@ const (
 	exitY        int = screenHeight - buttonHeight
 )
 
+type ActionBallot struct {
+	Pressed    []bool
+	Horizontal []int
+	Vertical   []int
+}
+
+type Action struct {
+	Pressed    bool
+	Horizontal int
+	Vertical   int
+}
+
+var (
+	targetX int
+	targetY int
+)
+
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+func goToPoint(x, y, tx, ty int) *ActionBallot {
+	b := &ActionBallot{}
+	if x == tx && y == ty {
+		return b
+	}
+	if y < ty {
+		b.Vertical = append(b.Vertical, 1)
+	} else if y == ty {
+		b.Vertical = append(b.Vertical, 0)
+	} else {
+		b.Vertical = append(b.Vertical, -1)
+	}
+	if x < tx {
+		b.Horizontal = append(b.Horizontal, 1)
+	} else if x == tx {
+		b.Horizontal = append(b.Horizontal, 0)
+	} else {
+		b.Horizontal = append(b.Horizontal, -1)
+	}
+	return b
+}
+
+func strategize(a *Action, x, y int) {
+	b := goToPoint(x, y, targetX, targetY)
+	if len(b.Horizontal) == 0 || len(b.Vertical) == 0 {
+		a.Horizontal = 0
+		a.Vertical = 0
+		targetX = rand.Intn(screenWidth)
+		targetY = rand.Intn(screenHeight)
+		fmt.Printf("got to point %d %d, new target %d %d\n", x, y, targetX, targetY)
+	} else {
+		a.Horizontal = b.Horizontal[rand.Intn(len(b.Horizontal))]
+		a.Vertical = b.Vertical[rand.Intn(len(b.Vertical))]
+	}
+	a.Pressed = rand.Intn(2) == 1
 }
 
 func main() {
@@ -80,23 +135,23 @@ func main() {
 
 	cx := imageX + rand.Intn(imageWidth)
 	cy := rand.Intn(imageHeight)
+	targetX = imageX + rand.Intn(imageWidth)
+	targetY = rand.Intn(imageHeight)
 	color := pal[rand.Intn(len(pal))]
 	pressX := 0
 	pressY := 0
 	prevPressed := false
-	pressed := false
-	vert := 0
-	horiz := 0
+	action := &Action{}
 	for {
 		// Moving?
-		cy = vert + cy
+		cy = action.Vertical + cy
 		if cy < 0 {
 			cy = 0
 		}
 		if cy >= screenHeight {
 			cy = screenHeight - 1
 		}
-		cx = horiz + cx
+		cx = action.Horizontal + cx
 		if cx < 0 {
 			cx = 0
 		}
@@ -105,6 +160,7 @@ func main() {
 		}
 
 		// Just pressed?
+		pressed := action.Pressed
 		if pressed && !prevPressed {
 			pressX = cx
 			pressY = cy
@@ -130,9 +186,7 @@ func main() {
 		}
 
 		prevPressed = pressed
-		vert = rand.Intn(3) - 1
-		horiz = rand.Intn(3) - 1
-		pressed = rand.Intn(2) == 1
+		strategize(action, cx, cy)
 	}
 
 	f, err := os.Create("out.png")
