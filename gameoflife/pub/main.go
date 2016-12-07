@@ -1,3 +1,7 @@
+// Copyright 2016 Google Inc.
+// Use of this source code is governed by the Apache 2.0
+// license that can be found in the LICENSE file.
+
 // The main package for the Game of Life ZeroMQ Pub/Sub server.
 //
 // This is an implementation of Conway's Game of Life. It is a 2D cellular
