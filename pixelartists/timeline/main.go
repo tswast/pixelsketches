@@ -9,10 +9,30 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
+	"log"
 	"math/rand"
 	"os"
+	"strconv"
 )
+
+var black = color.RGBA{0, 0, 0, 255}
+var darkBlue = color.RGBA{29, 43, 83, 255}
+var darkPurple = color.RGBA{126, 37, 83, 255}
+var darkGreen = color.RGBA{0, 135, 81, 255}
+var brown = color.RGBA{171, 82, 54, 255}
+var darkGray = color.RGBA{95, 87, 79, 255}
+var lightGray = color.RGBA{194, 195, 199, 255}
+var white = color.RGBA{255, 241, 232, 255}
+var red = color.RGBA{255, 0, 77, 255}
+var orange = color.RGBA{255, 163, 0, 255}
+var yellow = color.RGBA{255, 236, 39, 255}
+var green = color.RGBA{0, 228, 54, 255}
+var blue = color.RGBA{41, 173, 255, 255}
+var indigo = color.RGBA{131, 118, 156, 255}
+var pink = color.RGBA{255, 119, 168, 255}
+var peach = color.RGBA{255, 204, 170, 255}
 
 const (
 	screenWidth  int = 114
@@ -21,7 +41,7 @@ const (
 	imageWidth   int = 64
 	imageX       int = 25
 	buttonHeight int = 4
-	buttonBuffer int = 2
+	buttonBuffer int = 1
 	exitX        int = imageX + imageHeight + buttonBuffer
 	exitY        int = screenHeight - buttonHeight
 )
@@ -49,6 +69,125 @@ func check(e error) {
 	}
 }
 
+func drawPalette(scr draw.Image, pal []color.Color) {
+	scrB := scr.Bounds()
+	scrH := scrB.Max.Y - scrB.Min.Y
+	clrH := scrH / len(pal)
+	for ci, clr := range pal {
+		draw.Draw(
+			scr,
+			image.Rectangle{
+				image.Point{0, ci * clrH},
+				image.Point{imageX - buttonBuffer, (ci + 1) * clrH}},
+			&image.Uniform{clr},
+			image.ZP,
+			draw.Src)
+	}
+}
+
+func drawColorChoice(scr draw.Image, clr color.Color) {
+	draw.Draw(
+		scr,
+		image.Rectangle{
+			image.Point{imageX - buttonBuffer, 0},
+			image.Point{imageX, imageHeight}},
+		&image.Uniform{clr},
+		image.ZP,
+		draw.Src)
+	draw.Draw(
+		scr,
+		image.Rectangle{
+			image.Point{imageX + imageWidth, 0},
+			image.Point{imageX + imageWidth + buttonBuffer, imageHeight}},
+		&image.Uniform{clr},
+		image.ZP,
+		draw.Src)
+}
+
+func drawTools(scr draw.Image) {
+	draw.Draw(
+		scr,
+		image.Rectangle{
+			image.Point{imageX + imageWidth + buttonBuffer, 0},
+			image.Point{screenWidth, screenHeight}},
+		&image.Uniform{darkGray},
+		image.ZP,
+		draw.Src)
+	draw.Draw(
+		scr,
+		image.Rectangle{
+			image.Point{imageX + imageWidth + buttonBuffer, screenHeight - buttonHeight},
+			image.Point{screenWidth, screenHeight}},
+		&image.Uniform{black},
+		image.ZP,
+		draw.Src)
+	// Draw EXIT
+	// E
+	scr.Set(91, 60, white)
+	scr.Set(91, 61, white)
+	scr.Set(91, 62, white)
+	scr.Set(91, 63, white)
+	scr.Set(92, 60, white)
+	scr.Set(92, 61, white)
+	scr.Set(92, 63, white)
+	scr.Set(93, 60, white)
+	scr.Set(93, 63, white)
+	// X
+	scr.Set(95, 60, white)
+	scr.Set(95, 61, white)
+	scr.Set(95, 63, white)
+	scr.Set(96, 61, white)
+	scr.Set(96, 62, white)
+	scr.Set(97, 60, white)
+	scr.Set(97, 62, white)
+	scr.Set(97, 63, white)
+	// I
+	scr.Set(99, 60, white)
+	scr.Set(99, 63, white)
+	scr.Set(100, 60, white)
+	scr.Set(100, 61, white)
+	scr.Set(100, 62, white)
+	scr.Set(100, 63, white)
+	scr.Set(101, 60, white)
+	scr.Set(101, 63, white)
+	// T
+	scr.Set(103, 60, white)
+	scr.Set(104, 60, white)
+	scr.Set(104, 61, white)
+	scr.Set(104, 62, white)
+	scr.Set(104, 63, white)
+	scr.Set(105, 60, white)
+}
+
+func tryWriteFrame(frame int, im image.Image, clr color.Color, pal []color.Color, x, y int) {
+	r := image.Rect(0, 0, screenWidth, screenHeight)
+	scr := image.NewNRGBA(r)
+	drawPalette(scr, pal)
+	drawColorChoice(scr, clr)
+	drawTools(scr)
+	draw.Draw(
+		scr,
+		image.Rectangle{
+			image.Point{imageX, 0},
+			image.Point{imageX + imageWidth, imageHeight}},
+		im,
+		image.ZP,
+		draw.Src)
+	// Draw cursor
+	scr.Set(x, y, white)
+	// Write timeline image if we can.
+	f, err := os.Create(fmt.Sprintf("out/out-%04d.png", frame))
+	if err != nil {
+		log.Printf("Could not create out/out-%04d.png %s\n", frame, err)
+	}
+	defer f.Close()
+	w := bufio.NewWriter(f)
+	if err := png.Encode(w, scr); err != nil {
+		log.Printf("Could not encode out/out-%04d.png %s\n", frame, err)
+	}
+	w.Flush()
+}
+
 func goToPoint(x, y, tx, ty int) *ActionBallot {
 	b := &ActionBallot{}
 	if x == tx && y == ty {
@@ -71,6 +210,12 @@ func goToPoint(x, y, tx, ty int) *ActionBallot {
 	return b
 }
 
+func randomWalk(a *Action, x, y int) {
+	a.Horizontal = rand.Intn(3) - 1
+	a.Vertical = rand.Intn(3) - 1
+	a.Pressed = rand.Intn(2) == 1
+}
+
 func strategize(a *Action, x, y int) {
 	b := goToPoint(x, y, targetX, targetY)
 	if len(b.Horizontal) == 0 || len(b.Vertical) == 0 {
@@ -87,25 +232,21 @@ func strategize(a *Action, x, y int) {
 }
 
 func main() {
-	rand.Seed(19700101)
+	var seed int64
+	seed = 19700101
+	if len(os.Args) > 2 {
+		log.Fatalf("Got unexpected number of arguments %d\n", len(os.Args)-1)
+	}
+	if len(os.Args) == 2 {
+		var err error
+		seed, err = strconv.ParseInt(os.Args[1], 10, 64)
+		if err != nil {
+			log.Fatalf("Error parsing seed %s\n", err)
+		}
+	}
+	rand.Seed(seed)
 
 	// json.Unmarshal()
-	black := color.RGBA{0, 0, 0, 255}
-	darkBlue := color.RGBA{29, 43, 83, 255}
-	darkPurple := color.RGBA{126, 37, 83, 255}
-	darkGreen := color.RGBA{0, 135, 81, 255}
-	brown := color.RGBA{171, 82, 54, 255}
-	darkGray := color.RGBA{95, 87, 79, 255}
-	lightGray := color.RGBA{194, 195, 199, 255}
-	white := color.RGBA{255, 241, 232, 255}
-	red := color.RGBA{255, 0, 77, 255}
-	orange := color.RGBA{255, 163, 0, 255}
-	yellow := color.RGBA{255, 236, 39, 255}
-	green := color.RGBA{0, 228, 54, 255}
-	blue := color.RGBA{41, 173, 255, 255}
-	indigo := color.RGBA{131, 118, 156, 255}
-	pink := color.RGBA{255, 119, 168, 255}
-	peach := color.RGBA{255, 204, 170, 255}
 
 	pal := []color.Color{
 		black,
@@ -142,7 +283,7 @@ func main() {
 	pressY := 0
 	prevPressed := false
 	action := &Action{}
-	for {
+	for frame := 0; ; frame++ {
 		// Moving?
 		cy = action.Vertical + cy
 		if cy < 0 {
@@ -185,8 +326,13 @@ func main() {
 			}
 		}
 
+		if frame%10 == 0 {
+			tryWriteFrame(frame/10, im, color, pal, cx, cy)
+		}
+
 		prevPressed = pressed
-		strategize(action, cx, cy)
+		//strategize(action, cx, cy)
+		randomWalk(action, cx, cy)
 	}
 
 	f, err := os.Create("out.png")

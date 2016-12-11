@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="initial-scale = 1.0">
+<title>pixelsketches - current artwork</title>
+
+<style>
+  .pixel-art {
+    image-rendering: optimize-contrast;
+    image-rendering: pixelated;
+      border: 2px solid black;
+  }
+</style>
+
+<img id="animation" class="pixel-art" src="out/out-000.png" alt="pixel art">
+
+<script>
+function pad (num, places) {
+  var snum = '' + num
+  while (snum.length < places) {
+    snum = '0' + snum
+  }
+  return snum
+}
+
+var animation = document.getElementById('animation')
+var currentFrame = 0
+var maxFrame = 193
+window.setInterval(function () {
+  currentFrame = currentFrame + 1
+    if (currentFrame > maxFrame) {
+      currentFrame = 0 
+    }
+  animation.src = 'out/out-' + pad(currentFrame, 3) + '.png'
+}, 1000 / 30)
+</script>
