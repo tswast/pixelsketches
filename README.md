@@ -2,9 +2,9 @@
 
 This is a collection of pixel art generating "bots", written in Go.
 
-## Pixel art bot commune
+## art bot village
 
-- [pixelartists](pixelartists)
+- [village](village)
 
 A set of bots which generate pixel art, with the target of having them
 collaborate with each other.
