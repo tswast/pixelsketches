@@ -11,6 +11,7 @@
   }
 </style>
 
+<img id="final-artwork" class="pixel-art" src="out.png" alt="pixel art">
 <img id="animation" class="pixel-art" src="out/out-000.png" alt="pixel art">
 
 <script>
@@ -25,11 +26,11 @@ function pad (num, places) {
 var animation = document.getElementById('animation')
 var currentFrame = 0
 var maxFrame = 193
-window.setInterval(function () {
-  currentFrame = currentFrame + 1
-    if (currentFrame > maxFrame) {
-      currentFrame = 0 
-    }
-  animation.src = 'out/out-' + pad(currentFrame, 3) + '.png'
-}, 1000 / 30)
+//window.setInterval(function () {
+//  currentFrame = currentFrame + 1
+//    if (currentFrame > maxFrame) {
+//      currentFrame = 0 
+//    }
+//  animation.src = 'out/out-' + pad(currentFrame, 3) + '.png'
+//}, 1000 / 30)
 </script>
