@@ -2,6 +2,7 @@
 // Use of this source code is governed by the Apache 2.0
 // license that can be found in the LICENSE file.
 
+// Package artist is a bot pixel artist.
 package artist
 
 import (
@@ -36,6 +37,7 @@ func randomWalk(a *gui.Action) {
 	a.Pressed = rand.Intn(2) == 1
 }
 
+// Main draws a picture, writes it, and exits.
 func Main(seed int64, doTimeLapse bool) error {
 	rand.Seed(seed)
 
@@ -53,7 +55,6 @@ func Main(seed int64, doTimeLapse bool) error {
 		}
 
 		action := &gui.Action{}
-		//strategize(action, cx, cy)
 		randomWalk(action)
 		app.ApplyAction(action)
 	}
