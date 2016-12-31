@@ -7,7 +7,6 @@ package artist
 import (
 	"image"
 	"image/color"
-	"math"
 )
 
 func perceiveColor(im image.Image, c color.Color) float64 {
@@ -30,8 +29,16 @@ func perceiveColor(im image.Image, c color.Color) float64 {
 }
 
 // RateImage rates an image from 0 to 1 based on perception of color.
+//
+// Value is 0 at the endpoints and 1 at the ideal value.
 func RateImage(im image.Image, c color.Color, ideal float64) float64 {
-	obs := perceiveColor(im, c)
-	diff := math.Abs(ideal - obs)
-	return 1.0 - diff
+	x := perceiveColor(im, c)
+	m := 1.0 / ideal
+	b := 0.0
+	// If ideal is exactly 0, make sure the line slopes down
+	if x > ideal || ideal == 0.0 {
+		m = -1.0 / (1.0 - ideal)
+		b = -(-1.0 / (1.0 - ideal))
+	}
+	return m*x + b
 }
