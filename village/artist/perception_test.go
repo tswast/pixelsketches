@@ -38,7 +38,7 @@ func TestPerceiveColor(t *testing.T) {
 
 		got := perceiveColor(im, tt.clr)
 
-		if math.Abs(float64(got)-float64(tt.cnt)/100.0) > 0.001 {
+		if math.Abs(got-float64(tt.cnt)/100.0) > 0.001 {
 			t.Errorf("perceiveColor(im, %v) => %f, but expected %f", tt.clr, got, float64(tt.cnt)/100.0)
 		}
 	}

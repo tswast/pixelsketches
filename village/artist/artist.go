@@ -38,12 +38,13 @@ func randomWalk(a *gui.Action) {
 }
 
 // Main draws a picture, writes it, and exits.
-func Main(seed int64, doTimeLapse bool) error {
+func Main(outPath string, seed int64, doTimeLapse bool) error {
 	rand.Seed(seed)
 
 	app := gui.NewAppState()
 
-	for frame := 0; ; frame++ {
+	frame := 0
+	for ; ; frame++ {
 		if app.Mode != gui.MODE_DRAWING {
 			break
 		}
@@ -58,15 +59,16 @@ func Main(seed int64, doTimeLapse bool) error {
 		randomWalk(action)
 		app.ApplyAction(action)
 	}
+	fmt.Printf("frames: %d\n", frame)
 
-	f, err := os.Create("out.png")
+	f, err := os.Create(outPath)
 	if err != nil {
-		return fmt.Errorf("Error creating out.png: %s", err)
+		return fmt.Errorf("Error creating %s: %s", outPath, err)
 	}
 	defer f.Close()
 	w := bufio.NewWriter(f)
 	if err := png.Encode(w, app.Image); err != nil {
-		return fmt.Errorf("Error encoding out.png: %s", err)
+		return fmt.Errorf("Error encoding %s: %s", outPath, err)
 	}
 	w.Flush()
 	return nil
