@@ -11,7 +11,7 @@ import (
 	"os"
 
 	"github.com/tswast/pixelsketches/palettes"
-	"github.com/tswast/pixelsketches/village/artist"
+	"github.com/tswast/pixelsketches/village/perception"
 )
 
 func main() {
@@ -34,52 +34,52 @@ func main() {
 	// for i := 0; i < 16; i++ {
 	// 	fmt.Printf("%f\n", rand.Float32())
 	// }
-	r := artist.RateImage(im, palettes.PICO8_BLACK, 0.604660)
+	r := perception.RateImage(im, palettes.PICO8_BLACK, 0.604660)
 	fmt.Printf("black: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_DARK_BLUE, 0.940509)
+	r = perception.RateImage(im, palettes.PICO8_DARK_BLUE, 0.940509)
 	fmt.Printf("dark-blue: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_DARK_PURPLE, 0.664560)
+	r = perception.RateImage(im, palettes.PICO8_DARK_PURPLE, 0.664560)
 	fmt.Printf("dark-purple: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_DARK_GREEN, 0.437714)
+	r = perception.RateImage(im, palettes.PICO8_DARK_GREEN, 0.437714)
 	fmt.Printf("dark-green: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_BROWN, 0.424637)
+	r = perception.RateImage(im, palettes.PICO8_BROWN, 0.424637)
 	fmt.Printf("brown: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_DARK_GRAY, 0.686823)
+	r = perception.RateImage(im, palettes.PICO8_DARK_GRAY, 0.686823)
 	fmt.Printf("dark-gray: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_LIGHT_GRAY, 0.065637)
+	r = perception.RateImage(im, palettes.PICO8_LIGHT_GRAY, 0.065637)
 	fmt.Printf("light-gray: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_WHITE, 0.156519)
+	r = perception.RateImage(im, palettes.PICO8_WHITE, 0.156519)
 	fmt.Printf("white: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_RED, 0.096970)
+	r = perception.RateImage(im, palettes.PICO8_RED, 0.096970)
 	fmt.Printf("red: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_ORANGE, 0.300912)
+	r = perception.RateImage(im, palettes.PICO8_ORANGE, 0.300912)
 	fmt.Printf("orange: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_YELLOW, 0.515213)
+	r = perception.RateImage(im, palettes.PICO8_YELLOW, 0.515213)
 	fmt.Printf("yellow: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_GREEN, 0.813640)
+	r = perception.RateImage(im, palettes.PICO8_GREEN, 0.813640)
 	fmt.Printf("green: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_BLUE, 0.214264)
+	r = perception.RateImage(im, palettes.PICO8_BLUE, 0.214264)
 	fmt.Printf("blue: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_INDIGO, 0.380657)
+	r = perception.RateImage(im, palettes.PICO8_INDIGO, 0.380657)
 	fmt.Printf("indigo: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_PINK, 0.318058)
+	r = perception.RateImage(im, palettes.PICO8_PINK, 0.318058)
 	fmt.Printf("pink: %f\n", r)
 	rt += r
-	r = artist.RateImage(im, palettes.PICO8_PEACH, 0.468890)
+	r = perception.RateImage(im, palettes.PICO8_PEACH, 0.468890)
 	fmt.Printf("peach: %f\n", r)
 	rt += r
 	rt /= 16.0

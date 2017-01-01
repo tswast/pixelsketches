@@ -14,6 +14,7 @@ import (
 	"os"
 
 	"github.com/tswast/pixelsketches/village/gui"
+	"github.com/tswast/pixelsketches/village/strategy"
 )
 
 func tryWriteFrame(frame int, app *gui.AppState) {
@@ -31,20 +32,18 @@ func tryWriteFrame(frame int, app *gui.AppState) {
 	w.Flush()
 }
 
-func randomWalk(a *gui.Action) {
-	a.Horizontal = rand.Intn(3) - 1
-	a.Vertical = rand.Intn(3) - 1
-	a.Pressed = rand.Intn(2) == 1
-}
-
 // Main draws a picture, writes it, and exits.
-func Main(outPath string, seed int64, doTimeLapse bool) error {
+func Main(outPath string, seed int64, doTimeLapse bool, maxIter int, s strategy.Strategy) error {
 	rand.Seed(seed)
 
 	app := gui.NewAppState()
 
 	frame := 0
 	for ; ; frame++ {
+		if frame > maxIter {
+			log.Printf("reached max iterations %d\n", maxIter)
+			break
+		}
 		if app.Mode != gui.MODE_DRAWING {
 			break
 		}
@@ -55,9 +54,8 @@ func Main(outPath string, seed int64, doTimeLapse bool) error {
 			}
 		}
 
-		action := &gui.Action{}
-		randomWalk(action)
-		app.ApplyAction(action)
+		a := s(app)
+		app.ApplyAction(&a)
 	}
 	fmt.Printf("frames: %d\n", frame)
 

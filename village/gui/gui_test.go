@@ -32,6 +32,28 @@ func TestNewAppState(t *testing.T) {
 	}
 }
 
+func TestCopyAppState(t *testing.T) {
+	app := NewAppState()
+	app.Image.Set(16, 37, palettes.PICO8_DARK_BLUE)
+
+	got := CopyAppState(app)
+
+	if got == nil {
+		t.Fatal("Expected *AppState, got nil")
+	}
+	if got.Image == nil {
+		t.Error("Expected *image.Paletted, got nil")
+	}
+	app.Image.Set(16, 37, palettes.PICO8_PINK)
+	if got.Image.At(16, 37) != palettes.PICO8_DARK_BLUE {
+		t.Errorf("got.Image.At(16, 37) => %v, expected %v", got.Image.At(16, 37), palettes.PICO8_DARK_BLUE)
+	}
+	app.Cursor.Pressed = true
+	if got.Cursor.Pressed {
+		t.Error("Expected got.Cursor.Pressed == false, got true.")
+	}
+}
+
 var cursortests = []struct {
 	action Action
 	prev   Cursor

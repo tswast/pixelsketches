@@ -8,6 +8,7 @@ package gui
 import (
 	"image"
 	"image/color"
+	"image/draw"
 
 	"github.com/tswast/pixelsketches/palettes"
 )
@@ -54,18 +55,32 @@ type Action struct {
 	Vertical   int
 }
 
+func newImage() *image.Paletted {
+	r := image.Rect(0, 0, imageWidth, imageHeight)
+	im := image.NewPaletted(r, palettes.PICO8)
+	return im
+}
+
 // NewAppState creates a new AppState.
 func NewAppState() *AppState {
 	app := &AppState{}
-	r := image.Rect(0, 0, imageWidth, imageHeight)
-	app.Image = image.NewPaletted(r, palettes.PICO8)
-	for x := 0; x < 64; x++ {
-		for y := 0; y < 64; y++ {
+	app.Image = newImage()
+	for x := 0; x < imageWidth; x++ {
+		for y := 0; y < imageHeight; y++ {
 			app.Image.Set(x, y, palettes.PICO8_BLACK)
 		}
 	}
 	app.Color = app.Image.Palette[0]
 	return app
+}
+
+// CopyAppState makes a deep copy of an AppState.
+func CopyAppState(app *AppState) *AppState {
+	out := *app
+	// Copy the image.
+	out.Image = newImage()
+	draw.Draw(out.Image, out.Image.Bounds(), app.Image, image.ZP, draw.Src)
+	return &out
 }
 
 // ApplyAction modifies an AppState by an action.
