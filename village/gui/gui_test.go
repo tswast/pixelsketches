@@ -277,16 +277,16 @@ var painttests = []struct {
 	// Releasing doesn't paint. Paint only on press down.
 	{
 		Action{},
-		Cursor{Pos: image.Point{X: imageX + 12, Y: 36}},
+		Cursor{Pos: image.Point{X: ImageX + 12, Y: 36}},
 		palettes.PICO8_PINK,
 		palettes.PICO8_BLACK,
 	},
 	{
 		Action{},
 		Cursor{
-			Pos:      image.Point{X: imageX + 12, Y: 36},
+			Pos:      image.Point{X: ImageX + 12, Y: 36},
 			Pressed:  true,
-			PressPos: image.Point{X: imageX + 12, Y: 36},
+			PressPos: image.Point{X: ImageX + 12, Y: 36},
 		},
 		palettes.PICO8_PINK,
 		palettes.PICO8_BLACK,
@@ -295,9 +295,9 @@ var painttests = []struct {
 	{
 		Action{Pressed: true},
 		Cursor{
-			Pos:      image.Point{X: imageX + 12, Y: 36},
+			Pos:      image.Point{X: ImageX + 12, Y: 36},
 			Pressed:  true,
-			PressPos: image.Point{X: imageX - 12, Y: 36},
+			PressPos: image.Point{X: ImageX - 12, Y: 36},
 		},
 		palettes.PICO8_PINK,
 		palettes.PICO8_BLACK,
@@ -305,16 +305,16 @@ var painttests = []struct {
 	// Pressing with original press position on image paints.
 	{
 		Action{Pressed: true},
-		Cursor{Pos: image.Point{X: imageX + 12, Y: 36}},
+		Cursor{Pos: image.Point{X: ImageX + 12, Y: 36}},
 		palettes.PICO8_PINK,
 		palettes.PICO8_PINK,
 	},
 	{
 		Action{Pressed: true},
 		Cursor{
-			Pos:      image.Point{X: imageX + 12, Y: 36},
+			Pos:      image.Point{X: ImageX + 12, Y: 36},
 			Pressed:  true,
-			PressPos: image.Point{X: imageX + 12, Y: 36},
+			PressPos: image.Point{X: ImageX + 12, Y: 36},
 		},
 		palettes.PICO8_PINK,
 		palettes.PICO8_PINK,
@@ -322,9 +322,9 @@ var painttests = []struct {
 	{
 		Action{Pressed: true},
 		Cursor{
-			Pos:      image.Point{X: imageX + 12, Y: 36},
+			Pos:      image.Point{X: ImageX + 12, Y: 36},
 			Pressed:  true,
-			PressPos: image.Point{X: imageX, Y: 0},
+			PressPos: image.Point{X: ImageX, Y: 0},
 		},
 		palettes.PICO8_PINK,
 		palettes.PICO8_PINK,
@@ -337,7 +337,7 @@ func TestApplyActionPaintsColor(t *testing.T) {
 		app.Cursor = tt.cursor
 		app.Color = tt.color
 		app.ApplyAction(&tt.action)
-		x := app.Cursor.Pos.X - imageX
+		x := app.Cursor.Pos.X - ImageX
 		y := app.Cursor.Pos.Y
 		color := app.Image.At(x, y)
 		if color != tt.expected {

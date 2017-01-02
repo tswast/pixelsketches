@@ -16,13 +16,13 @@ import (
 const (
 	ScreenWidth  int = 114
 	ScreenHeight int = 64
-	imageHeight  int = 64
-	imageWidth   int = 64
-	imageX       int = 25
-	buttonHeight int = 4
-	buttonBuffer int = 1
-	exitX        int = imageX + imageHeight + buttonBuffer
-	exitY        int = ScreenHeight - buttonHeight
+	ImageHeight  int = 64
+	ImageWidth   int = 64
+	ImageX       int = 25
+	ButtonHeight int = 4
+	ButtonBuffer int = 1
+	ExitX        int = ImageX + ImageHeight + ButtonBuffer
+	ExitY        int = ScreenHeight - ButtonHeight
 )
 
 // Struct Cursor is a cursor position and button state.
@@ -56,7 +56,7 @@ type Action struct {
 }
 
 func newImage() *image.Paletted {
-	r := image.Rect(0, 0, imageWidth, imageHeight)
+	r := image.Rect(0, 0, ImageWidth, ImageHeight)
 	im := image.NewPaletted(r, palettes.PICO8)
 	return im
 }
@@ -65,8 +65,8 @@ func newImage() *image.Paletted {
 func NewAppState() *AppState {
 	app := &AppState{}
 	app.Image = newImage()
-	for x := 0; x < imageWidth; x++ {
-		for y := 0; y < imageHeight; y++ {
+	for x := 0; x < ImageWidth; x++ {
+		for y := 0; y < ImageHeight; y++ {
 			app.Image.Set(x, y, palettes.PICO8_BLACK)
 		}
 	}
@@ -115,21 +115,21 @@ func (app *AppState) ApplyAction(act *Action) {
 	}
 
 	// Drawing?
-	if pressed && app.Cursor.PressPos.X >= imageX && app.Cursor.PressPos.X < imageX+imageWidth &&
-		app.Cursor.Pos.X >= imageX && app.Cursor.Pos.X < imageX+imageWidth {
-		app.Image.Set(app.Cursor.Pos.X-imageX, app.Cursor.Pos.Y, app.Color)
+	if pressed && app.Cursor.PressPos.X >= ImageX && app.Cursor.PressPos.X < ImageX+ImageWidth &&
+		app.Cursor.Pos.X >= ImageX && app.Cursor.Pos.X < ImageX+ImageWidth {
+		app.Image.Set(app.Cursor.Pos.X-ImageX, app.Cursor.Pos.Y, app.Color)
 	}
 
 	// Clicked a button?
 	if prevPressed && !pressed {
 		// Done drawing?
-		if app.Cursor.PressPos.X >= exitX && app.Cursor.PressPos.Y >= exitY && app.Cursor.Pos.X >= exitX && app.Cursor.Pos.Y >= exitY {
+		if app.Cursor.PressPos.X >= ExitX && app.Cursor.PressPos.Y >= ExitY && app.Cursor.Pos.X >= ExitX && app.Cursor.Pos.Y >= ExitY {
 			app.Mode = MODE_DONE
 			return
 		}
 		// New color?
-		if app.Cursor.PressPos.X < imageX-buttonBuffer &&
-			app.Cursor.Pos.X < imageX-buttonBuffer && (app.Cursor.PressPos.Y/4) == (app.Cursor.Pos.Y/4) {
+		if app.Cursor.PressPos.X < ImageX-ButtonBuffer &&
+			app.Cursor.Pos.X < ImageX-ButtonBuffer && (app.Cursor.PressPos.Y/4) == (app.Cursor.Pos.Y/4) {
 			app.Color = app.Image.Palette[app.Cursor.Pos.Y/4]
 		}
 	}

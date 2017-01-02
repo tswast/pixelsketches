@@ -21,7 +21,7 @@ func drawPalette(scr draw.Image, pal []color.Color) {
 			scr,
 			image.Rectangle{
 				image.Point{0, ci * clrH},
-				image.Point{imageX - buttonBuffer, (ci + 1) * clrH}},
+				image.Point{ImageX - ButtonBuffer, (ci + 1) * clrH}},
 			&image.Uniform{clr},
 			image.ZP,
 			draw.Src)
@@ -32,16 +32,16 @@ func drawColorChoice(scr draw.Image, clr color.Color) {
 	draw.Draw(
 		scr,
 		image.Rectangle{
-			image.Point{imageX - buttonBuffer, 0},
-			image.Point{imageX, imageHeight}},
+			image.Point{ImageX - ButtonBuffer, 0},
+			image.Point{ImageX, ImageHeight}},
 		&image.Uniform{clr},
 		image.ZP,
 		draw.Src)
 	draw.Draw(
 		scr,
 		image.Rectangle{
-			image.Point{imageX + imageWidth, 0},
-			image.Point{imageX + imageWidth + buttonBuffer, imageHeight}},
+			image.Point{ImageX + ImageWidth, 0},
+			image.Point{ImageX + ImageWidth + ButtonBuffer, ImageHeight}},
 		&image.Uniform{clr},
 		image.ZP,
 		draw.Src)
@@ -51,7 +51,7 @@ func drawTools(scr draw.Image) {
 	draw.Draw(
 		scr,
 		image.Rectangle{
-			image.Point{imageX + imageWidth + buttonBuffer, 0},
+			image.Point{ImageX + ImageWidth + ButtonBuffer, 0},
 			image.Point{ScreenWidth, ScreenHeight}},
 		&image.Uniform{palettes.PICO8_DARK_GRAY},
 		image.ZP,
@@ -59,7 +59,7 @@ func drawTools(scr draw.Image) {
 	draw.Draw(
 		scr,
 		image.Rectangle{
-			image.Point{imageX + imageWidth + buttonBuffer, ScreenHeight - buttonHeight},
+			image.Point{ImageX + ImageWidth + ButtonBuffer, ScreenHeight - ButtonHeight},
 			image.Point{ScreenWidth, ScreenHeight}},
 		&image.Uniform{palettes.PICO8_BLACK},
 		image.ZP,
@@ -115,12 +115,15 @@ func (app *AppState) DrawScreen() *image.NRGBA {
 	draw.Draw(
 		scr,
 		image.Rectangle{
-			image.Point{imageX, 0},
-			image.Point{imageX + imageWidth, imageHeight}},
+			image.Point{ImageX, 0},
+			image.Point{ImageX + ImageWidth, ImageHeight}},
 		im,
 		image.ZP,
 		draw.Src)
 	// Draw cursor
-	scr.Set(app.Cursor.Pos.X, app.Cursor.Pos.Y, palettes.PICO8_WHITE)
+	// Choose a different color every time, so it is easier to track where the
+	// cursor is.
+	csr := (app.Cursor.Pos.X + app.Cursor.Pos.Y) % len(palettes.PICO8)
+	scr.Set(app.Cursor.Pos.X, app.Cursor.Pos.Y, palettes.PICO8[csr])
 	return scr
 }
