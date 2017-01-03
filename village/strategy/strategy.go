@@ -93,7 +93,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 			colors[clr] = tgt
 		}
 	}
-	max := Rating{rate: -1.0}
+	max := Rating{rate: -1.0, reason: "no-different-colors-found"}
 	for clr, pt := range colors {
 		// Set the color, rate, then undo. (Should be faster than copying and applying actions.)
 		app.Image.Set(pt.X, pt.Y, app.Color)
