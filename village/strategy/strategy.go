@@ -49,7 +49,8 @@ func actionDistance(src, tgt image.Point) int {
 //
 // Also, return the minimum number of actions needed to get to that position and paint.
 func simPaint(app *gui.AppState, act gui.Action) Rating {
-	imX := app.Cursor.Pos.X - gui.ImageX
+	// Select bounds to search for non-selected color.
+	imX := app.Cursor.Pos.X - gui.ImageX + act.Horizontal
 	if imX < 0 {
 		imX = 0
 	}
@@ -64,7 +65,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 	if act.Horizontal < 0 {
 		maxX = imX
 	}
-	imY := app.Cursor.Pos.Y
+	imY := app.Cursor.Pos.Y + act.Vertical
 	startY := 0
 	maxY := gui.ImageHeight
 	if act.Vertical > 0 {
