@@ -130,11 +130,12 @@ func checkPaintAtPoint(t *testing.T, app *gui.AppState, im string, action gui.Ac
 	}
 }
 
-func newAppStatePinkBlock() *gui.AppState {
+// newAppStatePinkBlock makes a new canvase with a 5x5 block centered @ (cx, cy).
+func newAppStatePinkBlock(cx, cy int) *gui.AppState {
 	app := gui.NewAppState()
 	// Leave a buffer to check that not selecting locations further out.
-	for x := 1; x < 6; x++ {
-		for y := 1; y < 6; y++ {
+	for x := cx - 2; x < cx+3; x++ {
+		for y := cy - 2; y < cy+3; y++ {
 			app.Image.Set(x, y, palettes.PICO8_PINK)
 		}
 	}
@@ -145,7 +146,7 @@ func newAppStatePinkBlock() *gui.AppState {
 
 func TestSimPaintAtPoint(t *testing.T) {
 	// Painting 2 actions away.
-	app := newAppStatePinkBlock()
+	app := newAppStatePinkBlock(3, 3)
 	app.Image.Set(3, 1, palettes.PICO8_BLACK)
 	got := simPaint(app, toUp)
 	checkPaintAtPoint(
@@ -156,7 +157,7 @@ func TestSimPaintAtPoint(t *testing.T) {
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 1}}})
 
-	app = newAppStatePinkBlock()
+	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(4, 1, palettes.PICO8_BLACK)
 	got = simPaint(app, toUpRight)
 	checkPaintAtPoint(
@@ -167,7 +168,7 @@ func TestSimPaintAtPoint(t *testing.T) {
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 4, Y: 1}}})
 
-	app = newAppStatePinkBlock()
+	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(5, 3, palettes.PICO8_BLACK)
 	got = simPaint(app, toRight)
 	checkPaintAtPoint(
@@ -178,7 +179,7 @@ func TestSimPaintAtPoint(t *testing.T) {
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 5, Y: 3}}})
 
-	app = newAppStatePinkBlock()
+	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(4, 5, palettes.PICO8_BLACK)
 	got = simPaint(app, toDownRight)
 	checkPaintAtPoint(
@@ -189,7 +190,7 @@ func TestSimPaintAtPoint(t *testing.T) {
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 4, Y: 5}}})
 
-	app = newAppStatePinkBlock()
+	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(3, 5, palettes.PICO8_BLACK)
 	got = simPaint(app, toDown)
 	checkPaintAtPoint(
@@ -200,7 +201,7 @@ func TestSimPaintAtPoint(t *testing.T) {
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 5}}})
 
-	app = newAppStatePinkBlock()
+	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(2, 5, palettes.PICO8_BLACK)
 	got = simPaint(app, toDownLeft)
 	checkPaintAtPoint(
@@ -211,7 +212,7 @@ func TestSimPaintAtPoint(t *testing.T) {
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 2, Y: 5}}})
 
-	app = newAppStatePinkBlock()
+	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(1, 3, palettes.PICO8_BLACK)
 	got = simPaint(app, toLeft)
 	checkPaintAtPoint(
@@ -222,7 +223,7 @@ func TestSimPaintAtPoint(t *testing.T) {
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 1, Y: 3}}})
 
-	app = newAppStatePinkBlock()
+	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(2, 1, palettes.PICO8_BLACK)
 	got = simPaint(app, toUpLeft)
 	checkPaintAtPoint(
@@ -232,4 +233,18 @@ func TestSimPaintAtPoint(t *testing.T) {
 		toUpLeft,
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 2, Y: 1}}})
+
+	// Block on right side of screen.
+	app = newAppStatePinkBlock(60, 3)
+	app.Image.Set(62, 3, palettes.PICO8_BLACK)
+	app.Cursor.Pos.X = gui.ImageX + 60
+	app.Cursor.Pos.Y = 3
+	got = simPaint(app, toRight)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block @ (60, 3), middle-right black",
+		toRight,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 62, Y: 3}}})
 }

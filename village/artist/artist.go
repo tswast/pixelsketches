@@ -78,7 +78,7 @@ func Main(inPath, outPath string, seed int64, debug, doTimeLapse bool, maxIter i
 
 		a, r := s(app)
 		if debug {
-			log.Printf("frame: %d\n\tpos: %v\n\tcolor: %v\n\taction: %v\n\trating: %#v\n", frame, app.Cursor.Pos, app.Color, a, r)
+			log.Printf("frame: %d\n\tpos: %v\n\tcolor: %v\n\taction: %v\n\trating: %s\n", frame, app.Cursor.Pos, app.Color, a, r.String())
 			if frame%100 == 0 {
 				f, err := os.Create(outPath)
 				if err != nil {

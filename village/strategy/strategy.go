@@ -38,13 +38,17 @@ type paintReason struct {
 }
 
 func (r *paintReason) explain() string {
-	return fmt.Sprintf("newColor: %v oldColor: %v pos: %v", r.newColor, r.oldColor, r.pos)
+	return fmt.Sprintf("painting with %v over %v @ %v", r.newColor, r.oldColor, r.pos)
 }
 
 type Rating struct {
 	rate   float64
 	dist   int
 	reason reason
+}
+
+func (r *Rating) String() string {
+	return fmt.Sprintf("{rate: %f dist: %d reason: %q}", r.rate, r.dist, r.reason.explain())
 }
 
 func imCoordToGuiCoord(pt image.Point) image.Point {
@@ -90,7 +94,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 	if startX < 0 {
 		startX = 0
 	}
-	maxX := gui.ImageX
+	maxX := gui.ImageWidth - 1
 	if act.Horizontal < 0 {
 		maxX = imX
 	}
@@ -301,9 +305,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 	// Can we paint the selected color somewhere different?
 	v := simPaint(gui.CopyAppState(app), act)
 	if (v.rate == max.rate && v.dist < max.dist) || v.rate > max.rate {
-		max.rate = v.rate
-		max.dist = v.dist
-		max.reason = &simpleReason{"paint-" + v.reason.explain()}
+		max = v
 	}
 
 	// Can we pick a new color and paint somewhere with that?
