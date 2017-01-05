@@ -47,6 +47,10 @@ type Rating struct {
 	reason reason
 }
 
+func imCoordToGuiCoord(pt image.Point) image.Point {
+	return image.Point{X: pt.X + gui.ImageX, Y: pt.Y}
+}
+
 // RandomWalk chooses the next action completely randomly.
 func RandomWalk(_ *gui.AppState) (gui.Action, Rating) {
 	return gui.Action{
@@ -113,20 +117,24 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 	// Try to replace one of each color.
 	var colors map[color.Color]image.Point
 	colors = make(map[color.Color]image.Point)
-	for x := startX; x < maxX; x++ {
-		for y := startY; y < maxY; y++ {
+	for x := startX; x <= maxX; x++ {
+		for y := startY; y <= maxY; y++ {
 			clr := app.Image.At(x, y)
 			if clr == app.Color {
 				continue
 			}
 			// Found an existing color? Only override the point if the distance
 			// to the new point is less than the distance to the old one.
-			tgt := image.Point{X: x, Y: y}
+			npt := image.Point{X: x, Y: y}
+			guiNpt := imCoordToGuiCoord(npt)
 			pt, ok := colors[clr]
-			if ok && actionDistance(app.Cursor.Pos, pt) <= actionDistance(app.Cursor.Pos, tgt) {
-				continue
+			if ok {
+				guiPt := imCoordToGuiCoord(pt)
+				if actionDistance(app.Cursor.Pos, guiPt) <= actionDistance(app.Cursor.Pos, guiNpt) {
+					continue
+				}
 			}
-			colors[clr] = tgt
+			colors[clr] = npt
 		}
 	}
 	max := Rating{rate: -1.0, reason: &simpleReason{"no-different-colors-found"}}
@@ -135,7 +143,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 		app.Image.Set(pt.X, pt.Y, app.Color)
 		rate := perception.RateWholeImage(app.Image)
 		app.Image.Set(pt.X, pt.Y, clr)
-		dist := actionDistance(app.Cursor.Pos, pt)
+		dist := actionDistance(app.Cursor.Pos, imCoordToGuiCoord(pt))
 		if (rate == max.rate && dist < max.dist) || rate > max.rate {
 			max.rate = rate
 			max.dist = dist

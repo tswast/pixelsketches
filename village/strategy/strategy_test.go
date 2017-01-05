@@ -19,25 +19,21 @@ func checkNoColors(t *testing.T, app string, action gui.Action, got Rating) {
 	}
 }
 
-func checkPaintAtPoint(t *testing.T, app string, action gui.Action, got Rating, expected *paintReason) {
-	pr, ok := got.reason.(*paintReason)
-	if !ok || *pr != *expected {
-		t.Errorf("simPaint(%s, %#v) => %#v reason: %q, want reason: %v", app, action, got.reason.explain())
-	}
-}
+var (
+	toRight     gui.Action = gui.Action{Horizontal: 1}
+	toDownRight gui.Action = gui.Action{Horizontal: 1, Vertical: 1}
+	toDown      gui.Action = gui.Action{Vertical: 1}
+	toDownLeft  gui.Action = gui.Action{Horizontal: -1, Vertical: 1}
+	toLeft      gui.Action = gui.Action{Horizontal: -1}
+	toUpLeft    gui.Action = gui.Action{Horizontal: -1, Vertical: -1}
+	toUp        gui.Action = gui.Action{Vertical: -1}
+	toUpRight   gui.Action = gui.Action{Horizontal: 1, Vertical: -1}
+	toCenter    gui.Action = gui.Action{}
+)
 
-func TestSimPaint(t *testing.T) {
+func TestSimPaintNoColors(t *testing.T) {
 	// No colors to possibly replace.
 	app := gui.NewAppState()
-	toRight := gui.Action{Horizontal: 1}
-	toDownRight := gui.Action{Horizontal: 1, Vertical: 1}
-	toDown := gui.Action{Vertical: 1}
-	toDownLeft := gui.Action{Horizontal: -1, Vertical: 1}
-	toLeft := gui.Action{Horizontal: -1}
-	toUpLeft := gui.Action{Horizontal: -1, Vertical: -1}
-	toUp := gui.Action{Vertical: -1}
-	toUpRight := gui.Action{Horizontal: 1, Vertical: -1}
-	toCenter := gui.Action{}
 	dirs := []gui.Action{toRight, toDownRight, toDown, toDownLeft, toLeft, toUpLeft, toUp, toUpRight, toCenter}
 	for _, dir := range dirs {
 		// Center of screen
@@ -102,24 +98,122 @@ func TestSimPaint(t *testing.T) {
 		got = simPaint(app, dir)
 		checkNoColors(t, "AppState{pink row, black selected, cursor: right}", dir, got)
 	}
+}
 
-	// Painting 2 actions away.
-	app = gui.NewAppState()
+func checkPaintAtPoint(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating, expected *Rating) {
+	if got.reason.explain() != expected.reason.explain() || got.dist != expected.dist {
+		t.Errorf(
+			"simPaint(%s @ %v, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: %d, reason: %v",
+			im,
+			app.Cursor.Pos,
+			action,
+			got.dist,
+			got.reason.explain(),
+			expected.dist,
+			expected.reason.explain())
+	}
+}
+
+func newAppStatePinkBlock() *gui.AppState {
+	app := gui.NewAppState()
 	// Leave a buffer to check that not selecting locations further out.
 	for x := 1; x < 6; x++ {
 		for y := 1; y < 6; y++ {
 			app.Image.Set(x, y, palettes.PICO8_PINK)
 		}
 	}
-	app.Image.Set(3, 1, palettes.PICO8_BLACK)
-	app.Cursor.Pos.X = 3
-	app.Cursor.Pos.Y = 3
+	app.Cursor.Pos = imCoordToGuiCoord(image.Point{3, 3})
 	app.Color = palettes.PICO8_PINK
+	return app
+}
+
+func TestSimPaintAtPoint(t *testing.T) {
+	// Painting 2 actions away.
+	app := newAppStatePinkBlock()
+	app.Image.Set(3, 1, palettes.PICO8_BLACK)
 	got := simPaint(app, toUp)
 	checkPaintAtPoint(
 		t,
-		"AppState{pink-block, top square black}",
+		app,
+		"pink-block, top-middle black",
 		toUp,
 		got,
-		&paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 1}})
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 1}}})
+
+	app = newAppStatePinkBlock()
+	app.Image.Set(4, 1, palettes.PICO8_BLACK)
+	got = simPaint(app, toUpRight)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, top-right black",
+		toUpRight,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 4, Y: 1}}})
+
+	app = newAppStatePinkBlock()
+	app.Image.Set(5, 3, palettes.PICO8_BLACK)
+	got = simPaint(app, toRight)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, middle-right black",
+		toRight,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 5, Y: 3}}})
+
+	app = newAppStatePinkBlock()
+	app.Image.Set(4, 5, palettes.PICO8_BLACK)
+	got = simPaint(app, toDownRight)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, bottom-right black",
+		toDownRight,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 4, Y: 5}}})
+
+	app = newAppStatePinkBlock()
+	app.Image.Set(3, 5, palettes.PICO8_BLACK)
+	got = simPaint(app, toDown)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, bottom-middle black",
+		toDown,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 5}}})
+
+	app = newAppStatePinkBlock()
+	app.Image.Set(2, 5, palettes.PICO8_BLACK)
+	got = simPaint(app, toDownLeft)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, bottom-left black",
+		toDownLeft,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 2, Y: 5}}})
+
+	app = newAppStatePinkBlock()
+	app.Image.Set(1, 3, palettes.PICO8_BLACK)
+	got = simPaint(app, toLeft)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, middle-left black",
+		toLeft,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 1, Y: 3}}})
+
+	app = newAppStatePinkBlock()
+	app.Image.Set(2, 1, palettes.PICO8_BLACK)
+	got = simPaint(app, toUpLeft)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, top-left black",
+		toUpLeft,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 2, Y: 1}}})
 }
