@@ -19,6 +19,34 @@ import (
 // A Strategy returns a new action for a given app state.
 type Strategy func(*gui.AppState) (gui.Action, Rating)
 
+type reason interface {
+	explain() string
+}
+
+type simpleReason struct {
+	reason string
+}
+
+func (r *simpleReason) explain() string {
+	return r.reason
+}
+
+type paintReason struct {
+	newColor color.Color
+	oldColor color.Color
+	pos      image.Point
+}
+
+func (r *paintReason) explain() string {
+	return fmt.Sprintf("newColor: %v oldColor: %v pos: %v", r.newColor, r.oldColor, r.pos)
+}
+
+type Rating struct {
+	rate   float64
+	dist   int
+	reason reason
+}
+
 // RandomWalk chooses the next action completely randomly.
 func RandomWalk(_ *gui.AppState) (gui.Action, Rating) {
 	return gui.Action{
@@ -65,7 +93,14 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 	if act.Horizontal < 0 {
 		maxX = imX
 	}
+
 	imY := app.Cursor.Pos.Y + act.Vertical
+	if imY < 0 {
+		imY = 0
+	}
+	if imY >= gui.ImageHeight {
+		imY = gui.ImageHeight - 1
+	}
 	startY := 0
 	maxY := gui.ImageHeight
 	if act.Vertical > 0 {
@@ -94,7 +129,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 			colors[clr] = tgt
 		}
 	}
-	max := Rating{rate: -1.0, reason: "no-different-colors-found"}
+	max := Rating{rate: -1.0, reason: &simpleReason{"no-different-colors-found"}}
 	for clr, pt := range colors {
 		// Set the color, rate, then undo. (Should be faster than copying and applying actions.)
 		app.Image.Set(pt.X, pt.Y, app.Color)
@@ -104,7 +139,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 		if (rate == max.rate && dist < max.dist) || rate > max.rate {
 			max.rate = rate
 			max.dist = dist
-			max.reason = fmt.Sprintf("selected: %v overwrite: %v pos: %v", app.Color, clr, pt)
+			max.reason = &paintReason{newColor: app.Color, oldColor: clr, pos: pt}
 		}
 	}
 	return max
@@ -117,7 +152,7 @@ func simChooseColor(app *gui.AppState, act gui.Action) Rating {
 	// When can't choose some color?
 	// When going right and to the right of the buttons.
 	if act.Horizontal > 0 && app.Cursor.Pos.X >= gui.ImageX-gui.ButtonBuffer {
-		return Rating{rate: -1, reason: "no-color-to-right"}
+		return Rating{rate: -1, reason: &simpleReason{"no-color-to-right"}}
 	}
 	drawAct := gui.Action{Horizontal: 1}
 
@@ -165,7 +200,7 @@ func simChooseColor(app *gui.AppState, act gui.Action) Rating {
 		if (rate == max.rate && dist < max.dist) || rate > max.rate {
 			max.rate = rate
 			max.dist = dist
-			max.reason = fmt.Sprintf("color-%d", c)
+			max.reason = &simpleReason{fmt.Sprintf("color-%d", c)}
 		}
 	}
 	return max
@@ -220,7 +255,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 		// There is nothing to click in the upper-right quadrant once outside of the image.
 		(app.Cursor.Pos.X >= gui.ImageX+gui.ImageWidth && app.Cursor.Pos.Y <= gui.ExitY && act.Horizontal > 0 && act.Vertical < 0) {
 		// Return -1 to discourage from picking this action.
-		return Rating{rate: -1, dist: 0, reason: "no-op"}
+		return Rating{rate: -1, dist: 0, reason: &simpleReason{"no-op"}}
 	}
 
 	// Already painting this action? Return the new Rating. Don't simulate
@@ -235,7 +270,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 			return Rating{
 				rate:   perception.RateWholeImage(simApp.Image),
 				dist:   1,
-				reason: "already-painting",
+				reason: &simpleReason{"already-painting"},
 			}
 		}
 	}
@@ -252,7 +287,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 	if (rate == max.rate && dist < max.dist) || rate > max.rate {
 		max.rate = rate
 		max.dist = dist
-		max.reason = "exit"
+		max.reason = &simpleReason{"exit"}
 	}
 
 	// Can we paint the selected color somewhere different?
@@ -260,7 +295,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 	if (v.rate == max.rate && v.dist < max.dist) || v.rate > max.rate {
 		max.rate = v.rate
 		max.dist = v.dist
-		max.reason = "paint-" + v.reason
+		max.reason = &simpleReason{"paint-" + v.reason.explain()}
 	}
 
 	// Can we pick a new color and paint somewhere with that?
@@ -268,7 +303,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 	if (v.rate == max.rate && v.dist < max.dist) || v.rate > max.rate {
 		max.rate = v.rate
 		max.dist = v.dist
-		max.reason = "choose-color-" + v.reason
+		max.reason = &simpleReason{"choose-color-" + v.reason.explain()}
 	}
 	return max
 }
@@ -286,12 +321,6 @@ var directions = []struct {
 	{-1, 1},
 	{0, 1},
 	{1, 1},
-}
-
-type Rating struct {
-	rate   float64
-	dist   int
-	reason string
 }
 
 // Ideal chooses the next action which has the highest expected overall Rating.
