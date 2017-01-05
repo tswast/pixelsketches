@@ -83,35 +83,35 @@ func actionDistance(src, tgt image.Point) int {
 func simPaint(app *gui.AppState, act gui.Action) Rating {
 	// Select bounds to search for non-selected color.
 	imX := app.Cursor.Pos.X - gui.ImageX + act.Horizontal
-	if imX < 0 {
-		imX = 0
-	}
-	if imX >= gui.ImageWidth {
-		imX = gui.ImageWidth - 1
-	}
 	startX := 0
-	maxX := gui.ImageX
 	if act.Horizontal > 0 {
 		startX = imX
 	}
+	if startX < 0 {
+		startX = 0
+	}
+	maxX := gui.ImageX
 	if act.Horizontal < 0 {
 		maxX = imX
 	}
+	if maxX >= gui.ImageWidth {
+		maxX = gui.ImageWidth - 1
+	}
 
 	imY := app.Cursor.Pos.Y + act.Vertical
-	if imY < 0 {
-		imY = 0
-	}
-	if imY >= gui.ImageHeight {
-		imY = gui.ImageHeight - 1
-	}
 	startY := 0
-	maxY := gui.ImageHeight
 	if act.Vertical > 0 {
 		startY = imY
 	}
+	if startY < 0 {
+		startY = 0
+	}
+	maxY := gui.ImageHeight
 	if act.Vertical < 0 {
 		maxY = imY
+	}
+	if maxY >= gui.ImageHeight {
+		maxY = gui.ImageHeight - 1
 	}
 
 	// Try to replace one of each color.

@@ -12,10 +12,16 @@ import (
 	"github.com/tswast/pixelsketches/village/gui"
 )
 
-func checkNoColors(t *testing.T, app string, action gui.Action, got Rating) {
+func checkNoColors(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating) {
 	cr, ok := got.reason.(*simpleReason)
 	if got.rate > 0 || !ok || cr.reason != "no-different-colors-found" {
-		t.Errorf("simPaint(%s, %#v) => %#v reason: %q, want rate: 0, reason: no-different-colors-found", app, action, got, got.reason.explain())
+		t.Errorf(
+			"simPaint(%s @ %v, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: -1, reason: no-different-colors-found",
+			im,
+			app.Cursor.Pos,
+			action,
+			got.dist,
+			got.reason.explain())
 	}
 }
 
@@ -40,18 +46,28 @@ func TestSimPaintNoColors(t *testing.T) {
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth/2
 		app.Cursor.Pos.Y = gui.ImageHeight / 2
 		got := simPaint(app, dir)
-		checkNoColors(t, "AppState{all black canvas, black selected, cursor: centered}", dir, got)
+		checkNoColors(t, app, "all black canvas, black selected", dir, got)
 
 		// Left of screen
 		app.Cursor.Pos.X = gui.ImageX - 1
 		got = simPaint(app, dir)
-		checkNoColors(t, "AppState{all black canvas, black selected, cursor: left}", dir, got)
+		checkNoColors(t, app, "all black canvas, black selected", dir, got)
 
 		// Right of screen
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth
 		got = simPaint(app, dir)
-		checkNoColors(t, "AppState{all black canvas, black selected, cursor: right}", dir, got)
+		checkNoColors(t, app, "all black canvas, black selected", dir, got)
 	}
+
+	// Going away from image when off the image.
+	app.Color = palettes.PICO8_PINK
+	app.Cursor.Pos = image.Point{10, 63}
+	got := simPaint(app, toLeft)
+	checkNoColors(t, app, "all black canvas, pink selected", toLeft, got)
+
+	app.Cursor.Pos = image.Point{gui.ImageX + gui.ImageWidth + 2, 63}
+	got = simPaint(app, toRight)
+	checkNoColors(t, app, "all black canvas, pink selected", toRight, got)
 
 	// Going horizontally, but no non-black pixels outside current column.
 	app = gui.NewAppState()
@@ -65,15 +81,15 @@ func TestSimPaintNoColors(t *testing.T) {
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth/2
 		app.Cursor.Pos.Y = 0
 		got := simPaint(app, dir)
-		checkNoColors(t, "AppState{pink column, black selected, cursor: top}", dir, got)
+		checkNoColors(t, app, "pink column, black selected", dir, got)
 
 		app.Cursor.Pos.Y = gui.ImageHeight / 2
 		got = simPaint(app, dir)
-		checkNoColors(t, "AppState{pink column, black selected, cursor: middle}", dir, got)
+		checkNoColors(t, app, "pink column, black selected", dir, got)
 
 		app.Cursor.Pos.Y = gui.ImageHeight - 1
 		got = simPaint(app, dir)
-		checkNoColors(t, "AppState{pink column, black selected, cursor: bottom}", dir, got)
+		checkNoColors(t, app, "pink column, black selected", dir, got)
 	}
 
 	// Going vertically, but no non-black pixels outside the current row.
@@ -88,15 +104,15 @@ func TestSimPaintNoColors(t *testing.T) {
 		app.Cursor.Pos.X = gui.ImageX
 		app.Cursor.Pos.Y = gui.ImageHeight / 2
 		got := simPaint(app, dir)
-		checkNoColors(t, "AppState{pink row, black selected, cursor: left}", dir, got)
+		checkNoColors(t, app, "pink row, black selected", dir, got)
 
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth/2
 		got = simPaint(app, dir)
-		checkNoColors(t, "AppState{pink row, black selected, cursor: middle}", dir, got)
+		checkNoColors(t, app, "pink row, black selected", dir, got)
 
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth - 1
 		got = simPaint(app, dir)
-		checkNoColors(t, "AppState{pink row, black selected, cursor: right}", dir, got)
+		checkNoColors(t, app, "pink row, black selected", dir, got)
 	}
 }
 
