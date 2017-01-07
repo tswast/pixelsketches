@@ -342,4 +342,28 @@ func TestSimChooseColor(t *testing.T) {
 				newColor: palettes.PICO8_BLACK,
 				oldColor: palettes.PICO8_ORANGE,
 				pos:      image.Point{X: 3, Y: gui.ButtonHeight / 2}}})
+
+	// Moving up or down, which doesn't get you closer to the button.
+	app = gui.NewAppState()
+	app.Cursor.Pos.X = gui.ImageX
+	app.Cursor.Pos.Y = gui.ButtonHeight / 2
+	app.Image.Set(3, gui.ButtonHeight/2, palettes.PICO8_ORANGE)
+	app.Color = palettes.PICO8_PINK
+	act = toUp
+	got = simChooseColor(app, act, func(im image.Image) float64 {
+		return perception.RateImage(im, palettes.PICO8_BLACK, 1.0)
+	})
+	checkSimChooseColor(
+		t,
+		app,
+		"all-black, except pink @ (3, 2), want all-black",
+		act,
+		got,
+		&Rating{
+			// 1 for going wrong direction. 3 from clicking new color. 6 to paint pixel from button.
+			dist: 1 + 3 + 6,
+			reason: &paintReason{
+				newColor: palettes.PICO8_BLACK,
+				oldColor: palettes.PICO8_ORANGE,
+				pos:      image.Point{X: 3, Y: gui.ButtonHeight / 2}}})
 }

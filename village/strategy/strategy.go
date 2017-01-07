@@ -196,6 +196,7 @@ func simChooseColor(app *gui.AppState, act gui.Action, rating perception.Rating)
 	if act.Horizontal > 0 && app.Cursor.Pos.X >= gui.ImageX-gui.ButtonBuffer {
 		return Rating{rate: -1, reason: &simpleReason{"no-color-to-right"}}
 	}
+	actPt := image.Point{X: app.Cursor.Pos.X + act.Horizontal, Y: app.Cursor.Pos.Y + act.Vertical}
 	drawAct := gui.Action{Horizontal: 1}
 
 	// Which colors can we select in this direction?
@@ -231,8 +232,10 @@ func simChooseColor(app *gui.AppState, act gui.Action, rating perception.Rating)
 
 		v := simPaint(simApp, drawAct, rating)
 		rate := v.rate
-		// Distance from button to paint + from cursor to button.
-		dist := v.dist + actionDistance(app.Cursor.Pos, simApp.Cursor.Pos)
+		// One action for current action +
+		// Distance from cursor after current action to button and click +
+		// Distance from button to paint.
+		dist := 1 + actionDistance(actPt, simApp.Cursor.Pos) + v.dist
 		// Add an action to click the button if we aren't pressing. Release
 		// will happen on the move out, on the button boundary.
 		if ((app.Cursor.Pos.Y/gui.ButtonHeight) == c && app.Cursor.Pos.X < simApp.Cursor.Pos.X && act.Pressed && !app.Cursor.Pressed) ||
