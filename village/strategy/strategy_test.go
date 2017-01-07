@@ -5,6 +5,7 @@
 package strategy
 
 import (
+	"fmt"
 	"image"
 	"testing"
 
@@ -15,10 +16,16 @@ import (
 func checkNoColors(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating) {
 	cr, ok := got.reason.(*simpleReason)
 	if got.rate > 0 || !ok || cr.reason != "no-different-colors-found" {
+		press := ""
+		if app.Cursor.Pressed {
+			press = fmt.Sprintf(" [pressed @ %v]", app.Cursor.PressPos)
+		}
 		t.Errorf(
-			"simPaint(%s @ %v, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: -1, reason: no-different-colors-found",
+			"simPaint(%s @ %v%s, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: -1, reason: no-different-colors-found",
 			im,
 			app.Cursor.Pos,
+			press,
+			app.Cursor.PressPos,
 			action,
 			got.dist,
 			got.reason.explain())
@@ -118,10 +125,15 @@ func TestSimPaintNoColors(t *testing.T) {
 
 func checkPaintAtPoint(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating, expected *Rating) {
 	if got.reason.explain() != expected.reason.explain() || got.dist != expected.dist {
+		press := ""
+		if app.Cursor.Pressed {
+			press = fmt.Sprintf(" [pressed @ %v]", app.Cursor.PressPos)
+		}
 		t.Errorf(
-			"simPaint(%s @ %v, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: %d, reason: %v",
+			"simPaint(%s @ %v%s, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: %d, reason: %v",
 			im,
 			app.Cursor.Pos,
+			press,
 			action,
 			got.dist,
 			got.reason.explain(),
@@ -247,4 +259,67 @@ func TestSimPaintAtPoint(t *testing.T) {
 		toRight,
 		got,
 		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 62, Y: 3}}})
+
+	// Painting 1 action away, but not this action, so 2 or more actions away.
+	app = newAppStatePinkBlock(3, 3)
+	app.Cursor.Pos.X = gui.ImageX + 3
+	app.Cursor.Pos.Y = 3
+	app.Image.Set(2, 2, palettes.PICO8_BLACK)
+	got = simPaint(app, toUp)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, top-left dist=1 black",
+		toUp,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 2, Y: 2}}})
+
+	// Distance 1 away, but not pressing.
+	app = newAppStatePinkBlock(3, 3)
+	app.Cursor.Pos.X = gui.ImageX + 3
+	app.Cursor.Pos.Y = 3
+	app.Image.Set(3, 2, palettes.PICO8_BLACK)
+	got = simPaint(app, toUp)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, top-middle dist=1, black",
+		toUp,
+		got,
+		&Rating{dist: 2, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 2}}})
+
+	// Distance 1 away, including this action, but have to release then paint again. So, actually distance 3.
+	app = newAppStatePinkBlock(3, 3)
+	app.Cursor.Pos.X = gui.ImageX + 3
+	app.Cursor.Pos.Y = 3
+	// Pressed off-canvas
+	app.Cursor.PressPos.X = 0
+	app.Cursor.PressPos.Y = 0
+	app.Cursor.Pressed = true
+	app.Image.Set(3, 2, palettes.PICO8_BLACK)
+	act := gui.Action{Vertical: -1, Pressed: true}
+	got = simPaint(app, act)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, top-middle dist=1, black",
+		act,
+		got,
+		&Rating{dist: 3, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 2}}})
+	app.Cursor.Pressed = false
+
+	// Distance 1 away, including this action. (Same as "still painting")
+	app = newAppStatePinkBlock(3, 3)
+	app.Cursor.Pos.X = gui.ImageX + 3
+	app.Cursor.Pos.Y = 3
+	app.Image.Set(3, 2, palettes.PICO8_BLACK)
+	act = gui.Action{Vertical: -1, Pressed: true}
+	got = simPaint(app, act)
+	checkPaintAtPoint(
+		t,
+		app,
+		"pink-block, top-middle dist=1, black",
+		act,
+		got,
+		&Rating{dist: 1, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 2}}})
 }

@@ -64,6 +64,7 @@ func RandomWalk(_ *gui.AppState) (gui.Action, Rating) {
 	}, Rating{}
 }
 
+// actionDistance returns the number of actions to move from src to tgt.
 func actionDistance(src, tgt image.Point) int {
 	h := tgt.X - src.X
 	if h < 0 {
@@ -85,8 +86,13 @@ func actionDistance(src, tgt image.Point) int {
 //
 // Also, return the minimum number of actions needed to get to that position and paint.
 func simPaint(app *gui.AppState, act gui.Action) Rating {
+	actPt := image.Point{
+		X: app.Cursor.Pos.X + act.Horizontal,
+		Y: app.Cursor.Pos.Y + act.Vertical,
+	}
+
 	// Select bounds to search for non-selected color.
-	imX := app.Cursor.Pos.X - gui.ImageX + act.Horizontal
+	imX := actPt.X - gui.ImageX
 	startX := 0
 	if act.Horizontal > 0 {
 		startX = imX
@@ -102,7 +108,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 		maxX = gui.ImageWidth - 1
 	}
 
-	imY := app.Cursor.Pos.Y + act.Vertical
+	imY := actPt.Y
 	startY := 0
 	if act.Vertical > 0 {
 		startY = imY
@@ -134,7 +140,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 			pt, ok := colors[clr]
 			if ok {
 				guiPt := imCoordToGuiCoord(pt)
-				if actionDistance(app.Cursor.Pos, guiPt) <= actionDistance(app.Cursor.Pos, guiNpt) {
+				if actionDistance(actPt, guiPt) <= actionDistance(actPt, guiNpt) {
 					continue
 				}
 			}
@@ -147,7 +153,22 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 		app.Image.Set(pt.X, pt.Y, app.Color)
 		rate := perception.RateWholeImage(app.Image)
 		app.Image.Set(pt.X, pt.Y, clr)
-		dist := actionDistance(app.Cursor.Pos, imCoordToGuiCoord(pt))
+
+		// Distance to move from cursor to point, including this action.
+		dist := actionDistance(actPt, imCoordToGuiCoord(pt)) + 1
+		// Special cases are needed for distance == 1.
+		if dist == 1 {
+			if act.Pressed && app.Cursor.Pressed &&
+				!(app.Cursor.PressPos.X >= gui.ImageX && app.Cursor.PressPos.X < gui.ImageX+gui.ImageWidth) {
+				// Have to release first then press again because press started
+				// off-canvas.
+				dist += 2
+			} else if !act.Pressed {
+				// Not pressing, so must take another action to press.
+				dist += 1
+			}
+		}
+
 		if (rate == max.rate && dist < max.dist) || rate > max.rate {
 			max.rate = rate
 			max.dist = dist
