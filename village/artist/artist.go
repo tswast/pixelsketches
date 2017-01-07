@@ -36,7 +36,7 @@ func tryWriteFrame(frame int, app *gui.AppState) {
 }
 
 // Main draws a picture, writes it, and exits.
-func Main(inPath, outPath string, seed int64, debug, doTimeLapse bool, maxIter int, s strategy.Strategy) error {
+func Main(inPath, outPath string, seed int64, debug, doTimeLapse bool, maxIter int, s strategy.Strategizer) error {
 	rand.Seed(seed)
 
 	app := gui.NewAppState()
@@ -76,7 +76,7 @@ func Main(inPath, outPath string, seed int64, debug, doTimeLapse bool, maxIter i
 			log.Printf("current-frame: %d\n", frame)
 		}
 
-		a, r := s(app)
+		a, r := s.Strategize(app)
 		if debug {
 			log.Printf(
 				"frame: %d\n\tpos: %v\n\timPos: %v\n\tcolor: %v\n\taction: %v\n\trating: %s\n",

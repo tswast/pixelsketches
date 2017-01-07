@@ -32,11 +32,11 @@ func main() {
 		log.Fatal("Value for -out is missing.")
 	}
 
-	var s strategy.Strategy
+	var s strategy.Strategizer
 	if st == "random" {
-		s = strategy.RandomWalk
+		s = &strategy.RandomWalk{}
 	} else if st == "ideal" {
-		s = strategy.Ideal
+		s = &strategy.Ideal{}
 	} else {
 		log.Fatal("Unexpected value for strategy.")
 	}

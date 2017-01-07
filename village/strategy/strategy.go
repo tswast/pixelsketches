@@ -16,8 +16,15 @@ import (
 	"github.com/tswast/pixelsketches/village/perception"
 )
 
-// A Strategy returns a new action for a given app state.
-type Strategy func(*gui.AppState) (gui.Action, Rating)
+// Strategizer chooses the next action.
+type Strategizer interface {
+	// Strategize chooses the next action.
+	//
+	// The Rating is returned to help debug its behavior. It should indicate
+	// the desirability (rating and distance to event) of the next action and
+	// why it was chosen.
+	Strategize(*gui.AppState) (gui.Action, Rating)
+}
 
 type reason interface {
 	explain() string
@@ -55,8 +62,10 @@ func imCoordToGuiCoord(pt image.Point) image.Point {
 	return image.Point{X: pt.X + gui.ImageX, Y: pt.Y}
 }
 
+type RandomWalk struct{}
+
 // RandomWalk chooses the next action completely randomly.
-func RandomWalk(_ *gui.AppState) (gui.Action, Rating) {
+func (_ *RandomWalk) Strategize(_ *gui.AppState) (gui.Action, Rating) {
 	return gui.Action{
 		Horizontal: rand.Intn(3) - 1,
 		Vertical:   rand.Intn(3) - 1,
@@ -85,7 +94,7 @@ func actionDistance(src, tgt image.Point) int {
 // simPaint returns maximum Rating if can paint in direction, otherwise -1.
 //
 // Also, return the minimum number of actions needed to get to that position and paint.
-func simPaint(app *gui.AppState, act gui.Action) Rating {
+func simPaint(app *gui.AppState, act gui.Action, rating perception.Rating) Rating {
 	actPt := image.Point{
 		X: app.Cursor.Pos.X + act.Horizontal,
 		Y: app.Cursor.Pos.Y + act.Vertical,
@@ -151,7 +160,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 	for clr, pt := range colors {
 		// Set the color, rate, then undo. (Should be faster than copying and applying actions.)
 		app.Image.Set(pt.X, pt.Y, app.Color)
-		rate := perception.RateWholeImage(app.Image)
+		rate := rating(app.Image)
 		app.Image.Set(pt.X, pt.Y, clr)
 
 		// Distance to move from cursor to point, including this action.
@@ -181,7 +190,7 @@ func simPaint(app *gui.AppState, act gui.Action) Rating {
 // simChooseColor returns maximum Rating if can choose a color in that direction, otherwise -1.
 //
 // Also returns the number of actions needed to select the color then paint.
-func simChooseColor(app *gui.AppState, act gui.Action) Rating {
+func simChooseColor(app *gui.AppState, act gui.Action, rating perception.Rating) Rating {
 	// When can't choose some color?
 	// When going right and to the right of the buttons.
 	if act.Horizontal > 0 && app.Cursor.Pos.X >= gui.ImageX-gui.ButtonBuffer {
@@ -201,6 +210,7 @@ func simChooseColor(app *gui.AppState, act gui.Action) Rating {
 	// Which colors could we pick?
 	max := Rating{rate: -1}
 	simApp := gui.CopyAppState(app)
+	// Apply the action to be certain the latest color is chosen.
 	simApp.ApplyAction(&act)
 	for c := cMin; c <= cMax; c++ {
 		// Try drawing from each color choice.
@@ -213,15 +223,16 @@ func simChooseColor(app *gui.AppState, act gui.Action) Rating {
 		justSelected := simApp.Color == app.Image.Palette[c]
 		if !justSelected {
 			simApp.Color = app.Image.Palette[c]
-			// Give an additional -1 button buffer, since releasing without
-			// moving is not an action the bot considers.
-			simApp.Cursor.Pos.X = gui.ImageX - gui.ButtonBuffer - 1
+			// Give an additional 2 past the button buffer, since the bot won't
+			// stop and release right on the edge.
+			simApp.Cursor.Pos.X = gui.ImageX - gui.ButtonBuffer - 2
 			simApp.Cursor.Pos.Y = c*gui.ButtonHeight + gui.ButtonHeight/2
 		}
 
-		v := simPaint(simApp, drawAct)
+		v := simPaint(simApp, drawAct, rating)
 		rate := v.rate
-		dist := v.dist + actionDistance(app.Cursor.Pos, simApp.Cursor.Pos) + 1
+		// Distance from button to paint + from cursor to button.
+		dist := v.dist + actionDistance(app.Cursor.Pos, simApp.Cursor.Pos)
 		// Add an action to click the button if we aren't pressing. Release
 		// will happen on the move out, on the button boundary.
 		if ((app.Cursor.Pos.Y/gui.ButtonHeight) == c && app.Cursor.Pos.X < simApp.Cursor.Pos.X && act.Pressed && !app.Cursor.Pressed) ||
@@ -233,14 +244,14 @@ func simChooseColor(app *gui.AppState, act gui.Action) Rating {
 		if (rate == max.rate && dist < max.dist) || rate > max.rate {
 			max.rate = rate
 			max.dist = dist
-			max.reason = &simpleReason{fmt.Sprintf("color-%d", c)}
+			max.reason = v.reason
 		}
 	}
 	return max
 }
 
 // simExit returns Rating if can exit in direction, otherwise -1.
-func simExit(app *gui.AppState, act gui.Action) (float64, int) {
+func simExit(app *gui.AppState, act gui.Action, rating perception.Rating) (float64, int) {
 	rate := -1.0
 	dist := 0
 	// Going right.
@@ -254,7 +265,7 @@ func simExit(app *gui.AppState, act gui.Action) (float64, int) {
 		// The Rating for choosing the exit action is whatever Rating the image
 		// would get now.
 		app.ApplyAction(&act)
-		rate = perception.RateWholeImage(app.Image)
+		rate = rating(app.Image)
 
 		// The distance is only 1 if this action causes an exit.
 		if app.Mode != gui.MODE_DRAWING {
@@ -276,7 +287,7 @@ func simExit(app *gui.AppState, act gui.Action) (float64, int) {
 // simAction returns the maximum expected Rating for a given action & direction.
 //
 // Modifies app, so send a copy.
-func simAction(app *gui.AppState, act gui.Action) Rating {
+func simAction(app *gui.AppState, act gui.Action, rating perception.Rating) Rating {
 	// Can't move left from the left edge of the screen.
 	if (app.Cursor.Pos.X <= 0 && act.Horizontal < 0) ||
 		// Can't move right from the right edge of the screen.
@@ -301,7 +312,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 		if imX >= 0 && imX < gui.ImageWidth &&
 			simApp.Image.At(imX, imY) != app.Image.At(imX, imY) {
 			return Rating{
-				rate:   perception.RateWholeImage(simApp.Image),
+				rate:   rating(simApp.Image),
 				dist:   1,
 				reason: &simpleReason{"already-painting"},
 			}
@@ -316,7 +327,7 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 	// stays exactly the same.
 
 	// Can we reach the exit button in the lower-right corner?
-	rate, dist := simExit(gui.CopyAppState(app), act)
+	rate, dist := simExit(gui.CopyAppState(app), act, rating)
 	if (rate == max.rate && dist < max.dist) || rate > max.rate {
 		max.rate = rate
 		max.dist = dist
@@ -324,13 +335,13 @@ func simAction(app *gui.AppState, act gui.Action) Rating {
 	}
 
 	// Can we paint the selected color somewhere different?
-	v := simPaint(gui.CopyAppState(app), act)
+	v := simPaint(gui.CopyAppState(app), act, rating)
 	if (v.rate == max.rate && v.dist < max.dist) || v.rate > max.rate {
 		max = v
 	}
 
 	// Can we pick a new color and paint somewhere with that?
-	v = simChooseColor(gui.CopyAppState(app), act)
+	v = simChooseColor(gui.CopyAppState(app), act, rating)
 	if (v.rate == max.rate && v.dist < max.dist) || v.rate > max.rate {
 		max.rate = v.rate
 		max.dist = v.dist
@@ -354,8 +365,10 @@ var directions = []struct {
 	{1, 1},
 }
 
+type Ideal struct{}
+
 // Ideal chooses the next action which has the highest expected overall Rating.
-func Ideal(app *gui.AppState) (gui.Action, Rating) {
+func (ideal *Ideal) Strategize(app *gui.AppState) (gui.Action, Rating) {
 	var results map[gui.Action]Rating
 	results = make(map[gui.Action]Rating)
 
@@ -370,7 +383,7 @@ func Ideal(app *gui.AppState) (gui.Action, Rating) {
 		}
 		calculateResult := func(a gui.Action) {
 			defer wg.Done()
-			v := simAction(gui.CopyAppState(app), a)
+			v := simAction(gui.CopyAppState(app), a, perception.RateWholeImage)
 			// Write results.
 			lock.Lock()
 			results[a] = v

@@ -11,25 +11,35 @@ import (
 
 	"github.com/tswast/pixelsketches/palettes"
 	"github.com/tswast/pixelsketches/village/gui"
+	"github.com/tswast/pixelsketches/village/perception"
 )
 
-func checkNoColors(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating) {
-	cr, ok := got.reason.(*simpleReason)
-	if got.rate > 0 || !ok || cr.reason != "no-different-colors-found" {
+func checkRating(t *testing.T, fn string, app *gui.AppState, im string, action gui.Action, got Rating, expected *Rating) {
+	if got.reason.explain() != expected.reason.explain() || got.dist != expected.dist {
 		press := ""
 		if app.Cursor.Pressed {
 			press = fmt.Sprintf(" [pressed @ %v]", app.Cursor.PressPos)
 		}
 		t.Errorf(
-			"simPaint(%s @ %v%s, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: -1, reason: no-different-colors-found",
+			"%s(%s @ %v%s, %#v, rating)\n\t=> dist: %d reason: %q,\n\twant dist: %d, reason: %v",
+			fn,
 			im,
 			app.Cursor.Pos,
 			press,
-			app.Cursor.PressPos,
 			action,
 			got.dist,
-			got.reason.explain())
+			got.reason.explain(),
+			expected.dist,
+			expected.reason.explain())
 	}
+}
+
+func checkSimPaint(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating, expected *Rating) {
+	checkRating(t, "simPaint", app, im, action, got, expected)
+}
+
+func checkNoColors(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating) {
+	checkSimPaint(t, app, im, action, got, &Rating{rate: -1, dist: 0, reason: &simpleReason{"no-different-colors-found"}})
 }
 
 var (
@@ -52,28 +62,28 @@ func TestSimPaintNoColors(t *testing.T) {
 		// Center of screen
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth/2
 		app.Cursor.Pos.Y = gui.ImageHeight / 2
-		got := simPaint(app, dir)
+		got := simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "all black canvas, black selected", dir, got)
 
 		// Left of screen
 		app.Cursor.Pos.X = gui.ImageX - 1
-		got = simPaint(app, dir)
+		got = simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "all black canvas, black selected", dir, got)
 
 		// Right of screen
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth
-		got = simPaint(app, dir)
+		got = simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "all black canvas, black selected", dir, got)
 	}
 
 	// Going away from image when off the image.
 	app.Color = palettes.PICO8_PINK
 	app.Cursor.Pos = image.Point{10, 63}
-	got := simPaint(app, toLeft)
+	got := simPaint(app, toLeft, perception.RateWholeImage)
 	checkNoColors(t, app, "all black canvas, pink selected", toLeft, got)
 
 	app.Cursor.Pos = image.Point{gui.ImageX + gui.ImageWidth + 2, 63}
-	got = simPaint(app, toRight)
+	got = simPaint(app, toRight, perception.RateWholeImage)
 	checkNoColors(t, app, "all black canvas, pink selected", toRight, got)
 
 	// Going horizontally, but no non-black pixels outside current column.
@@ -87,15 +97,15 @@ func TestSimPaintNoColors(t *testing.T) {
 		}
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth/2
 		app.Cursor.Pos.Y = 0
-		got := simPaint(app, dir)
+		got := simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "pink column, black selected", dir, got)
 
 		app.Cursor.Pos.Y = gui.ImageHeight / 2
-		got = simPaint(app, dir)
+		got = simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "pink column, black selected", dir, got)
 
 		app.Cursor.Pos.Y = gui.ImageHeight - 1
-		got = simPaint(app, dir)
+		got = simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "pink column, black selected", dir, got)
 	}
 
@@ -110,35 +120,16 @@ func TestSimPaintNoColors(t *testing.T) {
 		}
 		app.Cursor.Pos.X = gui.ImageX
 		app.Cursor.Pos.Y = gui.ImageHeight / 2
-		got := simPaint(app, dir)
+		got := simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "pink row, black selected", dir, got)
 
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth/2
-		got = simPaint(app, dir)
+		got = simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "pink row, black selected", dir, got)
 
 		app.Cursor.Pos.X = gui.ImageX + gui.ImageWidth - 1
-		got = simPaint(app, dir)
+		got = simPaint(app, dir, perception.RateWholeImage)
 		checkNoColors(t, app, "pink row, black selected", dir, got)
-	}
-}
-
-func checkPaintAtPoint(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating, expected *Rating) {
-	if got.reason.explain() != expected.reason.explain() || got.dist != expected.dist {
-		press := ""
-		if app.Cursor.Pressed {
-			press = fmt.Sprintf(" [pressed @ %v]", app.Cursor.PressPos)
-		}
-		t.Errorf(
-			"simPaint(%s @ %v%s, %#v)\n\t=> dist: %d reason: %q,\n\twant dist: %d, reason: %v",
-			im,
-			app.Cursor.Pos,
-			press,
-			action,
-			got.dist,
-			got.reason.explain(),
-			expected.dist,
-			expected.reason.explain())
 	}
 }
 
@@ -160,8 +151,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 	// Painting 2 actions away.
 	app := newAppStatePinkBlock(3, 3)
 	app.Image.Set(3, 1, palettes.PICO8_BLACK)
-	got := simPaint(app, toUp)
-	checkPaintAtPoint(
+	got := simPaint(app, toUp, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, top-middle black",
@@ -171,8 +162,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 
 	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(4, 1, palettes.PICO8_BLACK)
-	got = simPaint(app, toUpRight)
-	checkPaintAtPoint(
+	got = simPaint(app, toUpRight, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, top-right black",
@@ -182,8 +173,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 
 	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(5, 3, palettes.PICO8_BLACK)
-	got = simPaint(app, toRight)
-	checkPaintAtPoint(
+	got = simPaint(app, toRight, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, middle-right black",
@@ -193,8 +184,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 
 	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(4, 5, palettes.PICO8_BLACK)
-	got = simPaint(app, toDownRight)
-	checkPaintAtPoint(
+	got = simPaint(app, toDownRight, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, bottom-right black",
@@ -204,8 +195,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 
 	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(3, 5, palettes.PICO8_BLACK)
-	got = simPaint(app, toDown)
-	checkPaintAtPoint(
+	got = simPaint(app, toDown, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, bottom-middle black",
@@ -215,8 +206,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 
 	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(2, 5, palettes.PICO8_BLACK)
-	got = simPaint(app, toDownLeft)
-	checkPaintAtPoint(
+	got = simPaint(app, toDownLeft, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, bottom-left black",
@@ -226,8 +217,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 
 	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(1, 3, palettes.PICO8_BLACK)
-	got = simPaint(app, toLeft)
-	checkPaintAtPoint(
+	got = simPaint(app, toLeft, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, middle-left black",
@@ -237,8 +228,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 
 	app = newAppStatePinkBlock(3, 3)
 	app.Image.Set(2, 1, palettes.PICO8_BLACK)
-	got = simPaint(app, toUpLeft)
-	checkPaintAtPoint(
+	got = simPaint(app, toUpLeft, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, top-left black",
@@ -251,8 +242,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 	app.Image.Set(62, 3, palettes.PICO8_BLACK)
 	app.Cursor.Pos.X = gui.ImageX + 60
 	app.Cursor.Pos.Y = 3
-	got = simPaint(app, toRight)
-	checkPaintAtPoint(
+	got = simPaint(app, toRight, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block @ (60, 3), middle-right black",
@@ -265,8 +256,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 	app.Cursor.Pos.X = gui.ImageX + 3
 	app.Cursor.Pos.Y = 3
 	app.Image.Set(2, 2, palettes.PICO8_BLACK)
-	got = simPaint(app, toUp)
-	checkPaintAtPoint(
+	got = simPaint(app, toUp, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, top-left dist=1 black",
@@ -279,8 +270,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 	app.Cursor.Pos.X = gui.ImageX + 3
 	app.Cursor.Pos.Y = 3
 	app.Image.Set(3, 2, palettes.PICO8_BLACK)
-	got = simPaint(app, toUp)
-	checkPaintAtPoint(
+	got = simPaint(app, toUp, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, top-middle dist=1, black",
@@ -298,8 +289,8 @@ func TestSimPaintAtPoint(t *testing.T) {
 	app.Cursor.Pressed = true
 	app.Image.Set(3, 2, palettes.PICO8_BLACK)
 	act := gui.Action{Vertical: -1, Pressed: true}
-	got = simPaint(app, act)
-	checkPaintAtPoint(
+	got = simPaint(app, act, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, top-middle dist=1, black",
@@ -314,12 +305,41 @@ func TestSimPaintAtPoint(t *testing.T) {
 	app.Cursor.Pos.Y = 3
 	app.Image.Set(3, 2, palettes.PICO8_BLACK)
 	act = gui.Action{Vertical: -1, Pressed: true}
-	got = simPaint(app, act)
-	checkPaintAtPoint(
+	got = simPaint(app, act, perception.RateWholeImage)
+	checkSimPaint(
 		t,
 		app,
 		"pink-block, top-middle dist=1, black",
 		act,
 		got,
 		&Rating{dist: 1, reason: &paintReason{newColor: palettes.PICO8_PINK, oldColor: palettes.PICO8_BLACK, pos: image.Point{X: 3, Y: 2}}})
+}
+
+func checkSimChooseColor(t *testing.T, app *gui.AppState, im string, action gui.Action, got Rating, expected *Rating) {
+	checkRating(t, "simChooseColor", app, im, action, got, expected)
+}
+
+func TestSimChooseColor(t *testing.T) {
+	app := gui.NewAppState()
+	app.Cursor.Pos.X = gui.ImageX
+	app.Cursor.Pos.Y = gui.ButtonHeight / 2
+	app.Image.Set(3, gui.ButtonHeight/2, palettes.PICO8_ORANGE)
+	app.Color = palettes.PICO8_PINK
+	act := toLeft
+	got := simChooseColor(app, act, func(im image.Image) float64 {
+		return perception.RateImage(im, palettes.PICO8_BLACK, 1.0)
+	})
+	checkSimChooseColor(
+		t,
+		app,
+		"all-black, except pink @ (3, 2), want all-black",
+		act,
+		got,
+		&Rating{
+			// 3 from clicking new color. 6 to paint pixel from button.
+			dist: 3 + 6,
+			reason: &paintReason{
+				newColor: palettes.PICO8_BLACK,
+				oldColor: palettes.PICO8_ORANGE,
+				pos:      image.Point{X: 3, Y: gui.ButtonHeight / 2}}})
 }

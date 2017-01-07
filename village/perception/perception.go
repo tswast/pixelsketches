@@ -11,6 +11,11 @@ import (
 	"github.com/tswast/pixelsketches/palettes"
 )
 
+// Rating rates an image.
+//
+// The return value *should* be in [0, 1].
+type Rating func(im image.Image) float64
+
 func perceiveColor(im image.Image, c color.Color) float64 {
 	b := im.Bounds()
 	w := b.Max.X - b.Min.X
