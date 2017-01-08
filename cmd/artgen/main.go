@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/tswast/pixelsketches/village/artist"
+	"github.com/tswast/pixelsketches/village/perception"
 	"github.com/tswast/pixelsketches/village/strategy"
 )
 
@@ -36,7 +37,9 @@ func main() {
 	if st == "random" {
 		s = &strategy.RandomWalk{}
 	} else if st == "ideal" {
-		s = &strategy.Ideal{}
+		s = &strategy.Ideal{Rating: perception.RateWholeImage}
+	} else if st == "dictator" {
+		s = &strategy.Ideal{Rating: perception.RateBlack}
 	} else {
 		log.Fatal("Unexpected value for strategy.")
 	}

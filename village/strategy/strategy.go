@@ -258,7 +258,6 @@ func simChooseColor(app *gui.AppState, act gui.Action, rating perception.Rating)
 // simExit returns Rating if can exit in direction, otherwise -1.
 func simExit(app *gui.AppState, act gui.Action, rating perception.Rating) (float64, int) {
 	rate := -1.0
-	dist := 0
 	// Going right.
 	if (act.Horizontal > 0 && act.Vertical == 0) ||
 		// Going down-right.
@@ -271,22 +270,9 @@ func simExit(app *gui.AppState, act gui.Action, rating perception.Rating) (float
 		// would get now.
 		app.ApplyAction(&act)
 		rate = rating(app.Image)
-
-		// The distance is only 1 if this action causes an exit.
-		if app.Mode != gui.MODE_DRAWING {
-			dist = 1
-		} else if app.Cursor.Pos.X >= gui.ExitX && app.Cursor.Pos.Y >= gui.ExitY {
-			if app.Cursor.Pressed && app.Cursor.PressPos.X >= gui.ExitX && app.Cursor.PressPos.Y >= gui.ExitY {
-				dist = 2
-			} else {
-				dist = 3
-			}
-		} else {
-			// The distance is the distance to the button (and press when reaching) + 1 to release.
-			dist = actionDistance(app.Cursor.Pos, image.Point{gui.ExitX, gui.ExitY}) + 1
-		}
 	}
-	return rate, dist
+	// Use distance -1 so that exit is chosen before any other equivalent action.
+	return rate, -1
 }
 
 // simAction returns the maximum expected Rating for a given action & direction.
@@ -393,10 +379,12 @@ func (s Actions) Less(i, j int) bool {
 	return s[i].Horizontal < s[j].Horizontal
 }
 
-type Ideal struct{}
+type Ideal struct {
+	Rating perception.Rating
+}
 
 // Ideal chooses the next action which has the highest expected overall Rating.
-func (ideal *Ideal) Strategize(app *gui.AppState) (gui.Action, Rating) {
+func (s *Ideal) Strategize(app *gui.AppState) (gui.Action, Rating) {
 	var results map[gui.Action]Rating
 	results = make(map[gui.Action]Rating)
 
@@ -411,7 +399,7 @@ func (ideal *Ideal) Strategize(app *gui.AppState) (gui.Action, Rating) {
 		}
 		calculateResult := func(a gui.Action) {
 			defer wg.Done()
-			v := simAction(gui.CopyAppState(app), a, perception.RateWholeImage)
+			v := simAction(gui.CopyAppState(app), a, s.Rating)
 			// Write results.
 			lock.Lock()
 			results[a] = v

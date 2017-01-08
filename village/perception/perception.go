@@ -50,6 +50,11 @@ func RateImage(im image.Image, c color.Color, ideal float64) float64 {
 	return m*x + b
 }
 
+// RateBlack rates an image according to black's interest.
+func RateBlack(im image.Image) float64 {
+	return RateImage(im, palettes.PICO8_BLACK, 0.604660)
+}
+
 // RateWholeImage rates an image according to predefined "interests".
 func RateWholeImage(im image.Image) float64 {
 	rt := 0.0
@@ -57,7 +62,7 @@ func RateWholeImage(im image.Image) float64 {
 	// for i := 0; i < 16; i++ {
 	// 	fmt.Printf("%f\n", rand.Float32())
 	// }
-	r := RateImage(im, palettes.PICO8_BLACK, 0.604660)
+	r := RateBlack(im)
 	rt += r
 	r = RateImage(im, palettes.PICO8_DARK_BLUE, 0.940509)
 	rt += r
