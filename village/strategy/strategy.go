@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"log"
 	"math/rand"
+	"sort"
 	"sync"
 
 	"github.com/tswast/pixelsketches/village/gui"
@@ -368,6 +370,29 @@ var directions = []struct {
 	{1, 1},
 }
 
+// Actions lets you sort by gui.Action values.
+//
+// See: https://gobyexample.com/sorting-by-functions
+type Actions []gui.Action
+
+func (s Actions) Len() int {
+	return len(s)
+}
+
+func (s Actions) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+func (s Actions) Less(i, j int) bool {
+	if s[i].Pressed != s[j].Pressed {
+		return s[j].Pressed
+	}
+	if s[i].Vertical != s[j].Vertical {
+		return s[i].Vertical < s[j].Vertical
+	}
+	return s[i].Horizontal < s[j].Horizontal
+}
+
 type Ideal struct{}
 
 // Ideal chooses the next action which has the highest expected overall Rating.
@@ -398,13 +423,21 @@ func (ideal *Ideal) Strategize(app *gui.AppState) (gui.Action, Rating) {
 	}
 	wg.Wait()
 
-	var maxAct gui.Action
+	var maxActs []gui.Action
 	max := Rating{rate: -1.0}
 	for k, v := range results {
 		if (v.rate == max.rate && v.dist < max.dist) || v.rate > max.rate {
 			max = v
-			maxAct = k
+			maxActs = []gui.Action{k}
+		} else if v.rate == max.rate && v.dist == max.dist {
+			maxActs = append(maxActs, k)
 		}
 	}
+	sort.Sort(Actions(maxActs))
+	if len(maxActs) == 0 {
+		log.Printf("Oops. I didn't find a maximum action.\n")
+		return gui.Action{}, max
+	}
+	maxAct := maxActs[rand.Intn(len(maxActs))]
 	return maxAct, max
 }
