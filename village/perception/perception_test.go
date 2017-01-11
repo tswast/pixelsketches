@@ -34,16 +34,16 @@ var colortests = []struct {
 	{73, palettes.PICO8_PINK},
 }
 
-func TestPerceiveColor(t *testing.T) {
+func TestCountColors(t *testing.T) {
 	r := image.Rectangle{image.Point{0, 0}, image.Point{10, 10}}
 	im := image.NewPaletted(r, palettes.PICO8)
 	for _, tt := range colortests {
 		setProp(im, tt.clr, tt.cnt)
 
-		got := perceiveColor(im, tt.clr)
+		got := CountColors(im)
 
-		if math.Abs(got-float64(tt.cnt)/100.0) > 0.001 {
-			t.Errorf("perceiveColor(im, %v) => %f, but expected %f", tt.clr, got, float64(tt.cnt)/100.0)
+		if got[tt.clr] != tt.cnt {
+			t.Errorf("CountColors(im)[%v] => %f, but expected %f", tt.clr, got, tt.cnt)
 		}
 	}
 }
@@ -83,8 +83,13 @@ func TestRateImage(t *testing.T) {
 	im := image.NewPaletted(r, palettes.PICO8)
 	for _, tt := range ratetests {
 		setProp(im, palettes.PICO8_PINK, tt.actual)
+		cnts := CountColors(im)
+		b := im.Bounds()
+		w := b.Max.X - b.Min.X
+		h := b.Max.Y - b.Min.Y
+		pxls := w * h
 
-		got := RateImage(im, palettes.PICO8_PINK, float64(tt.ideal)/100)
+		got := RateImage(pxls, cnts[palettes.PICO8_PINK], float64(tt.ideal)/100)
 
 		if math.Abs(got-tt.expected) > 0.001 {
 			t.Errorf(
