@@ -7,6 +7,7 @@ package perception
 import (
 	"image"
 	"image/color"
+	"math"
 
 	"github.com/tswast/pixelsketches/palettes"
 )
@@ -123,4 +124,34 @@ func RateWholeImage(im image.Image) float64 {
 	rt += r
 	rt /= 16.0
 	return rt
+}
+
+// ColorDist calculates the distance between two colors.
+func ColorDist(a, b color.Color) float64 {
+	r1, g1, b1, _ := a.RGBA()
+	r2, g2, b2, _ := b.RGBA()
+	d := 0.0
+	d += math.Pow(float64(r1-r2), 2)
+	d += math.Pow(float64(g1-g2), 2)
+	d += math.Pow(float64(b1-b2), 2)
+	d = math.Sqrt(d)
+	d /= math.Pow(2.0, 16)
+	return d
+}
+
+// PerceiveTLCorner checks if the point at x, y is a top-left corner.
+func PerceiveTLCorner(x, y int, im image.Image) float64 {
+	b := im.Bounds()
+	// Out of boutnds?
+	if x < b.Min.X || x >= b.Max.X || y < b.Min.Y || y >= b.Max.Y {
+		return 0.0
+	}
+	v := 1.0
+	c := im.At(x, y)
+	if x >= b.Min.X {
+
+	}
+	w := b.Max.X - b.Min.X
+	h := b.Max.Y - b.Min.Y
+	im.At(x, y)
 }

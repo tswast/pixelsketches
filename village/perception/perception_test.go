@@ -101,3 +101,6 @@ func TestRateImage(t *testing.T) {
 		}
 	}
 }
+
+func TestColorDist(t *testing.T) {
+}
