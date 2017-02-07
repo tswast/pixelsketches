@@ -126,8 +126,8 @@ func RateWholeImage(im image.Image) float64 {
 	return rt
 }
 
-// ColorDist calculates the distance between two colors.
-func ColorDist(a, b color.Color) float64 {
+// colorDist calculates the distance between two colors.
+func colorDist(a, b color.Color) float64 {
 	r1, g1, b1, _ := a.RGBA()
 	r2, g2, b2, _ := b.RGBA()
 	d := 0.0
@@ -135,12 +135,13 @@ func ColorDist(a, b color.Color) float64 {
 	d += math.Pow(float64(g1-g2), 2)
 	d += math.Pow(float64(b1-b2), 2)
 	d = math.Sqrt(d)
-	d /= math.Pow(2.0, 16)
+	// Scale by the maximum possible distance.
+	d /= math.Sqrt(3 * (math.Pow(math.Pow(2.0, 16)-1.0, 2)))
 	return d
 }
 
-// PerceiveTLCorner checks if the point at x, y is a top-left corner.
-func PerceiveTLCorner(x, y int, im image.Image) float64 {
+// perceiveTLCorner checks if the point at x, y is a top-left corner.
+func perceiveTLCorner(x, y int, im image.Image) float64 {
 	b := im.Bounds()
 	// Out of boutnds?
 	if x < b.Min.X || x >= b.Max.X || y < b.Min.Y || y >= b.Max.Y {
@@ -148,10 +149,13 @@ func PerceiveTLCorner(x, y int, im image.Image) float64 {
 	}
 	v := 1.0
 	c := im.At(x, y)
-	if x >= b.Min.X {
-
+	if x > b.Min.X {
+		// Colors should be as different as possible to the left.
+		v *= colorDist(im.At(x-1, y), c)
 	}
-	w := b.Max.X - b.Min.X
-	h := b.Max.Y - b.Min.Y
-	im.At(x, y)
+	if y > b.Min.Y {
+		// Colors should be as different as possible to the top.
+		v *= colorDist(im.At(x, y-1), c)
+	}
+	return v
 }

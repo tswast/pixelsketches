@@ -103,4 +103,9 @@ func TestRateImage(t *testing.T) {
 }
 
 func TestColorDist(t *testing.T) {
+	got := colorDist(color.RGBA{255, 255, 255, 255}, color.RGBA{A: 255})
+
+	if math.Abs(got-1) > 0.001 {
+		t.Errorf("ColorDist(WHITE, BLACK) => %f, but expected 1.0", got)
+	}
 }
