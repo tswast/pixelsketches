@@ -122,7 +122,13 @@ func RateWholeImage(im image.Image) float64 {
 	rt += r
 	r = RateImage(pxls, cnts[palettes.PICO8_PEACH], IdealPeach)
 	rt += r
-	rt /= 16.0
+	//rt /= 16.0
+
+	// TODO: delete me. Just an experiment in corners.
+	// Also, should ideal corners really be 100%?
+	r = countTLCorners(im)
+	rt += r
+	rt /= 17.0
 	return rt
 }
 
@@ -157,5 +163,29 @@ func perceiveTLCorner(x, y int, im image.Image) float64 {
 		// Colors should be as different as possible to the top.
 		v *= colorDist(im.At(x, y-1), c)
 	}
+	if x < b.Max.X-1 {
+		// Colors should be as similar as possible to the right.
+		v *= (1.0 - colorDist(im.At(x+1, y), c))
+	}
+	if y < b.Max.Y-1 {
+		// Colors should be as similar as possible to the bottom.
+		v *= (1.0 - colorDist(im.At(x, y+1), c))
+	}
 	return v
+}
+
+func countTLCorners(im image.Image) float64 {
+	b := im.Bounds()
+	w := b.Max.X - b.Min.X
+	h := b.Max.Y - b.Min.Y
+	pxls := w * h
+	// If x, y is a corner, then just to the right and just below cannot be corners.
+	maxCorners := float64(pxls) / 3.0
+	corners := 0.0
+	for x := b.Min.X; x < b.Max.X; x++ {
+		for y := b.Min.Y; y < b.Max.Y; y++ {
+			corners += perceiveTLCorner(x, y, im)
+		}
+	}
+	return corners / maxCorners
 }
