@@ -102,10 +102,29 @@ func TestRateImage(t *testing.T) {
 	}
 }
 
-func TestColorDist(t *testing.T) {
-	got := colorDist(color.RGBA{255, 255, 255, 255}, color.RGBA{A: 255})
+var colordisttests = []struct {
+	a        color.Color
+	b        color.Color
+	expected float64
+}{
+	// Max distance
+	{color.RGBA{255, 255, 255, 255}, color.RGBA{A: 255}, 1.0},
+	// Min distance
+	{color.RGBA{A: 255}, color.RGBA{A: 255}, 0.0},
+	// One edge.
+	{color.RGBA{A: 255}, color.RGBA{R: 255, A: 255}, math.Sqrt(1.0 / 3.0)},
+	{color.RGBA{A: 255}, color.RGBA{B: 255, A: 255}, math.Sqrt(1.0 / 3.0)},
+	{color.RGBA{A: 255}, color.RGBA{G: 255, A: 255}, math.Sqrt(1.0 / 3.0)},
+	// Between points
+	{color.RGBA{B: 255, A: 255}, color.RGBA{R: 255, A: 255}, math.Sqrt(2.0 / 3.0)},
+}
 
-	if math.Abs(got-1) > 0.001 {
-		t.Errorf("ColorDist(WHITE, BLACK) => %f, but expected 1.0", got)
+func TestColorDist(t *testing.T) {
+	for _, tt := range colordisttests {
+		got := colorDist(tt.a, tt.b)
+
+		if math.Abs(got-tt.expected) > 0.001 {
+			t.Errorf("ColorDist(\n\t%#v,\n\t%#v) => %f,\n\tbut expected %f", tt.a, tt.b, got, tt.expected)
+		}
 	}
 }

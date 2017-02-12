@@ -134,15 +134,22 @@ func RateWholeImage(im image.Image) float64 {
 
 // colorDist calculates the distance between two colors.
 func colorDist(a, b color.Color) float64 {
-	r1, g1, b1, _ := a.RGBA()
-	r2, g2, b2, _ := b.RGBA()
+	r1d, g1d, b1d, _ := a.RGBA()
+	r2d, g2d, b2d, _ := b.RGBA()
+	// Scale colors to be between 0 and 1
+	r1 := float64(r1d) / 65535
+	r2 := float64(r2d) / 65535
+	g1 := float64(g1d) / 65535
+	g2 := float64(g2d) / 65535
+	b1 := float64(b1d) / 65535
+	b2 := float64(b2d) / 65535
 	d := 0.0
-	d += math.Pow(float64(r1-r2), 2)
-	d += math.Pow(float64(g1-g2), 2)
-	d += math.Pow(float64(b1-b2), 2)
-	d = math.Sqrt(d)
+	d += math.Pow(r1-r2, 2)
+	d += math.Pow(g1-g2, 2)
+	d += math.Pow(b1-b2, 2)
 	// Scale by the maximum possible distance.
-	d /= math.Sqrt(3 * (math.Pow(math.Pow(2.0, 16)-1.0, 2)))
+	d /= 3
+	d = math.Sqrt(d)
 	return d
 }
 
