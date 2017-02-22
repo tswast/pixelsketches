@@ -8,6 +8,7 @@ import (
 	"flag"
 	"log"
 
+	"github.com/tswast/pixelsketches/palettes"
 	"github.com/tswast/pixelsketches/village/artist"
 	"github.com/tswast/pixelsketches/village/perception"
 	"github.com/tswast/pixelsketches/village/strategy"
@@ -40,6 +41,25 @@ func main() {
 		s = &strategy.Ideal{Rating: perception.RateWholeImage}
 	} else if st == "dictator" {
 		s = &strategy.Ideal{Rating: perception.RateBlack}
+	} else if st == "plurality" {
+		s = &strategy.Plurality{[]*strategy.Ideal{
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealBlack, palettes.PICO8_BLACK)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealDarkBlue, palettes.PICO8_DARK_BLUE)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealDarkPurple, palettes.PICO8_DARK_PURPLE)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealDarkGreen, palettes.PICO8_DARK_GREEN)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealBrown, palettes.PICO8_BROWN)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealDarkGray, palettes.PICO8_DARK_GRAY)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealLightGray, palettes.PICO8_LIGHT_GRAY)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealWhite, palettes.PICO8_WHITE)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealRed, palettes.PICO8_RED)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealOrange, palettes.PICO8_ORANGE)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealYellow, palettes.PICO8_YELLOW)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealGreen, palettes.PICO8_GREEN)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealBlue, palettes.PICO8_BLUE)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealIndigo, palettes.PICO8_INDIGO)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealPink, palettes.PICO8_PINK)},
+			&strategy.Ideal{Rating: perception.NewRating(perception.IdealPeach, palettes.PICO8_PEACH)},
+		}}
 	} else {
 		log.Fatal("Unexpected value for strategy.")
 	}

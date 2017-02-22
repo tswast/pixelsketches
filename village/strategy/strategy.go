@@ -429,3 +429,48 @@ func (s *Ideal) Strategize(app *gui.AppState) (gui.Action, Rating) {
 	maxAct := maxActs[rand.Intn(len(maxActs))]
 	return maxAct, max
 }
+
+type Plurality struct {
+	Voters []*Ideal
+}
+
+func (s *Plurality) Strategize(app *gui.AppState) (gui.Action, Rating) {
+	vs := make(map[gui.Action]int)
+
+	var wg sync.WaitGroup
+	lock := sync.Mutex{}
+	for _, v := range s.Voters {
+		wg.Add(1)
+		vote := func(v *Ideal) {
+			defer wg.Done()
+			a, _ := v.Strategize(app)
+			// Increment votes for that voter's top choice.
+			lock.Lock()
+			vs[a] = vs[a] + 1
+			lock.Unlock()
+		}
+		go vote(v)
+	}
+	wg.Wait()
+
+	// Find the action with the top votes.
+	var ma []gui.Action
+	m := -1
+	for a, c := range vs {
+		if c > m {
+			ma = []gui.Action{a}
+			m = c
+		} else if c == m {
+			ma = append(ma, a)
+		}
+	}
+	// Choose from top voted choices at random.
+	// This keeps the votes deterministic for a given random seed.
+	sort.Sort(Actions(ma))
+	if len(ma) == 0 {
+		log.Printf("Oops. I didn't find a maximum action.\n")
+		return gui.Action{}, Rating{rate: float64(m), reason: &simpleReason{"no max votes"}}
+	}
+	a := ma[rand.Intn(len(ma))]
+	return a, Rating{rate: float64(m), reason: &simpleReason{"votes"}}
+}

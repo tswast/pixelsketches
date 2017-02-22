@@ -72,6 +72,19 @@ func RateImage(pxls, cnt int, ideal float64) float64 {
 	return m*x + b
 }
 
+// NewRating creates a rating function which desires an ideal amount of a color.
+func NewRating(ideal float64, c color.Color) Rating {
+	r := func(im image.Image) float64 {
+		b := im.Bounds()
+		w := b.Max.X - b.Min.X
+		h := b.Max.Y - b.Min.Y
+		pxls := w * h
+		cnt := CountColors(im)[c]
+		return RateImage(pxls, cnt, ideal)
+	}
+	return r
+}
+
 // RateBlack rates an image according to black's interest.
 func RateBlack(im image.Image) float64 {
 	b := im.Bounds()
@@ -122,13 +135,8 @@ func RateWholeImage(im image.Image) float64 {
 	rt += r
 	r = RateImage(pxls, cnts[palettes.PICO8_PEACH], IdealPeach)
 	rt += r
-	//rt /= 16.0
+	rt /= 16.0
 
-	// TODO: delete me. Just an experiment in corners.
-	// Also, should ideal corners really be 100%?
-	r = countTLCorners(im)
-	rt += r
-	rt /= 17.0
 	return rt
 }
 
