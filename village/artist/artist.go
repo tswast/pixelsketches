@@ -15,7 +15,6 @@ import (
 	"math/rand"
 	"os"
 
-	"github.com/tswast/pixelsketches/palettes"
 	"github.com/tswast/pixelsketches/village/gui"
 	"github.com/tswast/pixelsketches/village/strategy"
 )
@@ -51,12 +50,9 @@ func Main(inPath, outPath string, seed int64, debug, doTimeLapse bool, maxIter i
 			log.Fatalf("Error decoding %s: %s", inPath, err)
 		}
 		draw.Draw(app.Image, app.Image.Bounds(), im, image.ZP, draw.Src)
-		// TOOD: remove, just for debugging.
-		app.Color = palettes.PICO8_ORANGE
-		app.Cursor.Pos.X = 27
-		app.Cursor.Pos.Y = 25
 	}
 
+	pts := make(map[image.Point]int)
 	frame := 0
 	for ; ; frame++ {
 		if frame > maxIter {
@@ -67,10 +63,8 @@ func Main(inPath, outPath string, seed int64, debug, doTimeLapse bool, maxIter i
 			break
 		}
 
-		if frame%10 == 0 {
-			if doTimeLapse {
-				tryWriteFrame(frame/10, app)
-			}
+		if doTimeLapse {
+			tryWriteFrame(frame, app)
 		}
 		if frame%100 == 0 {
 			log.Printf("current-frame: %d\n", frame)
@@ -98,6 +92,14 @@ func Main(inPath, outPath string, seed int64, debug, doTimeLapse bool, maxIter i
 				w.Flush()
 				f.Close()
 			}
+		}
+		// Stop if we've been at this exact same point before.
+		dejavu, ok := pts[app.Cursor.Pos]
+		if !ok {
+			pts[app.Cursor.Pos] = frame
+		} else if frame-dejavu > 20 {
+			log.Printf("already been at this position")
+			break
 		}
 		app.ApplyAction(&a)
 	}
