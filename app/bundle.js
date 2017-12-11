@@ -14,10 +14,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+const DIRECTIONS = [
+  {x: -1, y: 0},  // -pi
+  {x: -1, y: 1},  // -3/4 pi
+  {x: 0, y: 1},  // -1/2 pi
+  {x: 1, y: 1},  // -1/4 pi
+  {x: 1, y: 0},  // 0 pi
+  {x: 1, y: -1},  // 1/4 pi
+  {x: 0, y: -1},  // 1/2 pi
+  {x: -1, y: -1},  // 3/4 pi
+]
+
 class Canvas {
   constructor(element) {
     this.cursorX = 16
     this.cursorY = 16
+    this.isMoving = false
+    this.moveStartX = 0
+    this.moveStartY = 0
+    this.moveRadiusSqr = 16 * 16
     this.zoomLevel = 4
 
     var canvas = document.createElement('canvas')
@@ -38,6 +53,7 @@ class Canvas {
     element.appendChild(document.createElement('br'))
   
     var drawCanvas = document.createElement('canvas')
+    drawCanvas.classList.add('app-canvas')
     drawCanvas.setAttribute('width', 32*this.zoomLevel)
     drawCanvas.setAttribute('height', 32*this.zoomLevel)
     this.drawCanvas = drawCanvas
@@ -51,8 +67,8 @@ class Canvas {
   
     element.appendChild(drawCanvas)
     element.appendChild(document.createElement('br'))
-    drawCanvas.addEventListener('touchstart', this.processTouchMove.bind(this), false)
-    drawCanvas.addEventListener('touchmove', this.processTouchMove.bind(this), false)
+    drawCanvas.addEventListener('touchstart', this.processMoveStartTouch.bind(this), false)
+    drawCanvas.addEventListener('touchmove', this.processMoveTouch.bind(this), false)
     drawCanvas.addEventListener('mousedown', this.processMouseDown.bind(this), false)
     drawCanvas.addEventListener('mouseup', this.processMouseUp.bind(this), false)
     drawCanvas.addEventListener('mousemove', this.processMouseMove.bind(this), false)
@@ -76,34 +92,50 @@ class Canvas {
     this.isDrawing = false
   }
 
-  processTouchMove(evt) {
-    // Get the relative coordinates to the canvas.
-    // https://stackoverflow.com/a/33756703/101923
-    var rect = evt.target.getBoundingClientRect();
-    var x = evt.targetTouches[0].pageX - rect.left;
-    var y = evt.targetTouches[0].pageY - rect.top;
+  processMoveStartTouch(evt) {
+    this.isMoving = true
+    this.moveStartX = evt.targetTouches[0].screenX
+    this.moveStartY = evt.targetTouches[0].screenY
+  }
 
-    this.cursorX = Math.floor(x / this.zoomLevel)
-    this.cursorY = Math.floor(y / this.zoomLevel)
+  squaredDistanceToMoveStart(x, y) {
+    return Math.pow(x - this.moveStartX, 2) + Math.pow(y - this.moveStartY, 2)
+  }
 
-    if (!!this.isDrawing) {
-      this.context.fillRect(this.cursorX, this.cursorY, 1, 1)
-    }
-
+  processMoveTouch(evt) {
     // Call preventDefault() to prevent mouse events
     evt.preventDefault();
+
+    var x = evt.targetTouches[0].screenX
+    var y = evt.targetTouches[0].screenY
+    var dist = this.squaredDistanceToMoveStart(x, y)
+    if (dist > this.moveRadiusSqr) {
+      var theta = Math.atan2(x - this.moveStartX, y - this.moveStartY)
+      // TODO: rotate slighly so cardinal directions match up.
+      var dIndex = Math.min(7, Math.floor(8 * (theta + Math.PI) / (2 * Math.PI)))
+      var direction = DIRECTIONS[dIndex]
+      
+      this.cursorX = this.cursorX + direction.x
+      this.cursorY = this.cursorY + direction.y
+      this.moveStartX = x
+      this.moveStartY = y
+
+      if (!!this.isDrawing) {
+        this.context.fillRect(this.cursorX, this.cursorY, 1, 1)
+      }
+    }
   }
 
   processMouseDown(evt) {
-    this.moving = true
+    this.isMoving = true
   }
 
   processMouseUp(evt) {
-    this.moving = false
+    this.isMoving = false
   }
 
   processMouseMove(evt) {
-    if (!this.moving) {
+    if (!this.isMoving) {
       return
     }
     this.cursorX = Math.floor(evt.offsetX / this.zoomLevel)
