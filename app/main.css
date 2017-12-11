@@ -1,0 +1,5 @@
+
+/* Disable scrolling: https://stackoverflow.com/a/29629214/101923 */
+html, body {
+  position: fixed;
+}
