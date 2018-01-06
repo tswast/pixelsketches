@@ -13,9 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-'use strict'
+import { default as PixelCanvas } from './pixel-canvas.js'
 
-var canvas = require('./canvas.js')
+'use strict'
 
 function render (app) {
   var doRender = function (timestamp) {
@@ -25,8 +25,8 @@ function render (app) {
   return doRender
 }
 
-window.addEventListener('load', function () {
+//window.addEventListener('load', function () {
   var appElement = document.getElementById('app')
-  var app = new canvas.Canvas(appElement)
+  var app = new PixelCanvas(appElement)
   window.requestAnimationFrame(render(app))
-})
+//})

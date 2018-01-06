@@ -4,11 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "webpack",
     "test": "standard main.js canvas.js"
   },
   "author": "",
   "license": "Apache-2.0",
   "devDependencies": {
-    "standard": "^10.0.3"
-  }
+    "standard": "^10.0.3",
+    "webpack": "^3.10.0"
+  },
+  "dependencies": {}
 }

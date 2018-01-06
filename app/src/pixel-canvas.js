@@ -24,7 +24,7 @@ const DIRECTIONS = [
   {x: -1, y: -1},  // 3/4 pi
 ]
 
-class Canvas {
+class PixelCanvas {
   constructor(element) {
     this.cursorX = 16
     this.cursorY = 16
@@ -156,4 +156,4 @@ class Canvas {
   }
 }
 
-exports.Canvas = Canvas
+export { PixelCanvas as default }
