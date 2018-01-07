@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack",
-    "test": "standard main.js canvas.js"
+    "test": "standard src/*.js"
   },
   "author": "",
   "license": "Apache-2.0",
