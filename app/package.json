@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "build": "webpack",
-    "test": "standard src/*.js"
+    "test": "standard src/*.js",
+    "start": "webpack-dev-server --open"
   },
-  "author": "",
+  "author": "Tim Swast",
   "license": "Apache-2.0",
   "devDependencies": {
     "standard": "^10.0.3",
-    "webpack": "^3.10.0"
+    "webpack": "^3.10.0",
+    "webpack-dev-server": "^2.11.1"
   },
   "dependencies": {}
 }
