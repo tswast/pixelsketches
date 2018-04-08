@@ -1,0 +1,20 @@
+
+/* Disable scrolling: https://stackoverflow.com/a/29629214/101923 */
+html, body {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  padding: 0px;
+  margin: 0px;
+}
+
+canvas {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: pixelated;
+}
+
+.app-canvas {
+  width: 80%;
+  max-width: 30em;
+}
