@@ -15,11 +15,19 @@
 
 'use strict'
 
+import { default as stateDefinitions } from './state.json'
+
 class PixelCanvas {
   constructor (element) {
+    this.slowness = 3
+    this.slowCount = 0
     this.zoomLevel = 4
-    this.spriteX = 32
-    this.spriteY = 32
+    this.stateIndex = 0
+    this.animIndex = 0        
+    var state = stateDefinitions[this.stateIndex]
+    var frame = state['s'][this.animIndex]
+    this.spriteX = (frame * 8) % 128
+    this.spriteY = Math.floor(frame / 16) * 8
 
     var canvas = document.createElement('canvas')
     canvas.setAttribute('width', 32)
@@ -30,7 +38,7 @@ class PixelCanvas {
     // https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_usage
     var ctx = canvas.getContext('2d')
     this.spriteSheet = new Image()
-    this.spriteSheet.src = './gamekitty.png'
+    this.spriteSheet.src = './gamekitty_pico8.png'
     ctx.drawImage(this.spriteSheet, this.spriteX, this.spriteY, 8, 8, 2, 10, 8, 8)
     this.context = ctx
 
@@ -54,14 +62,26 @@ class PixelCanvas {
   }
 
   update (timeDiff) {
-    this.spriteX = this.spriteX + 8
-    if (this.spriteX >= 64) {
-      this.spriteX = 0
-      this.spriteY = this.spriteY + 8
+    this.slowCount = this.slowCount + 1
+    if (this.slowCount < this.slowness) {
+      return
     }
-    if (this.spriteY >= 72) {
-      this.spriteY = 0
+    this.slowCount = 0
+    var state = stateDefinitions[this.stateIndex]
+
+    // Move to next frame
+    this.animIndex = this.animIndex + 1
+
+    // Move to next state
+    if (this.animIndex >= state['s'].length) {
+      this.animIndex = 0
+      var nextState = Math.floor(Math.random() * state['next'].length)
+      this.stateIndex = state['next'][nextState]
+      state = stateDefinitions[this.stateIndex]
     }
+    var frame = state['s'][this.animIndex]
+    this.spriteX = (frame * 8) % 128
+    this.spriteY = Math.floor(frame / 16) * 8
   }
 
   render () {
