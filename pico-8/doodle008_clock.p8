@@ -10,6 +10,8 @@ __lua__
 clrramp={0,1,2,8,14,15,7}
 xo=0
 yo=0
+ydir=-1
+clkwidth=24
 movecounter=0
 
 --darken the whole screen by 1
@@ -30,16 +32,16 @@ end
 
 function dot()
  local x,y,c,glow,tx,ty
- x = flr(rnd(8))
- y = flr(rnd(8))
+ x=flr(rnd(8))
+ y=flr(rnd(8))
  pal()
  c=sget(x,y)
  --offset the clock face
  tx=x+xo
- if tx>=8 then
-  tx=tx-8
+ if tx>=clkwidth then
+  tx=tx-clkwidth
  elseif tx<0 then
-  tx=tx+8
+  tx=tx+clkwidth
  end
  ty=y+yo
  if ty>=8 then
@@ -58,30 +60,25 @@ end
 
 function _update()
  local i
- for i=1,8 do
+ for i=1,16 do
   dot()
  end
  --move the clock?
  movecounter=movecounter+1
- if movecounter>=30*6 then
+ if movecounter>=30*2 then
   movecounter=0
   darken()
-  if rnd(1)<0.5 then
-   --move x
-   if rnd(1)<0.5 then
-    xo=xo-1
-   else
-    xo=xo+1
-   end
-   xo=xo%8
-  else
-   --move y
-   if rnd(1)<0.5 then
-    yo=yo-1
-   else
-    yo=yo+1
-   end
-   yo=yo%8
+  --move x
+  xo=xo+1
+  xo=xo%clkwidth
+  --move y
+  if yo<-2 then
+   ydir=1
+  elseif yo>-1 then
+   ydir=-1
+  end
+  if rnd(1)<0.1 then
+   yo=yo+ydir
   end
  end
 end
@@ -90,7 +87,9 @@ function _draw()
  local i
  cls()
  spr(0,0,0)
- print(stat(93),8,0,1)
+ print(
+  stat(93)..":"..stat(94),
+  8,0,1)
  --save first row of screen
  --to spritesheet
  memcpy(0x0,0x6000,512)
