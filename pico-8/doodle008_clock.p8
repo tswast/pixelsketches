@@ -84,11 +84,15 @@ function _update()
 end
 
 function _draw()
- local i
+ local i,minutes
  cls()
  spr(0,0,0)
+ minutes=stat(94)
+ if minutes < 10 then
+  minutes="0"..minutes
+ end
  print(
-  stat(93)..":"..stat(94),
+  stat(93)..":"..minutes,
   8,0,1)
  --save first row of screen
  --to spritesheet
