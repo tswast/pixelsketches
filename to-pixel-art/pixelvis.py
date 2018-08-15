@@ -73,8 +73,10 @@ PALETTES = {
 
 
 def colordist(pix1, pix2):
-    pix1 = colorsys.rgb_to_hsv(*[channel / 256 for channel in pix1])
-    pix2 = colorsys.rgb_to_hsv(*[channel / 256 for channel in pix2])
+    rgba1 = [channel / 256 for channel in pix1]
+    rgba2 = [channel / 256 for channel in pix2]
+    pix1 = colorsys.rgb_to_hsv(*rgba1[:3])
+    pix2 = colorsys.rgb_to_hsv(*rgba2[:3])
     dist = 0
     for i in range(3):
         dist += abs(pix1[i] - pix2[i]) #** 2
