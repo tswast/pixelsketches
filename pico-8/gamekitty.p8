@@ -40,7 +40,7 @@ states={
   s={26,4},
   next={6,7,9,10,14},--4
  },
- { --7: sit down
+ { --7: sit down and bat
   s={57,58,59,60,61,62,63,64,65,66},
   next={1},
  },
@@ -115,7 +115,7 @@ function _update()
   return
  end
  cat.frame=1
- 
+
  --move for end of frame
  local state=states[cat.state]
  local si=state.s[cat.ssi]
@@ -129,14 +129,14 @@ function _update()
    cat.x=cat.x+xo*xdir
   end
  end
- 
+
  if cat.x<-8 then
   cat.x=127+7
  end
  if cat.x>127+8 then
   cat.x=-7
  end
- 
+
  cat.ssi=cat.ssi+1
 	local state=states[cat.state]
  if cat.ssi>#state.s then
